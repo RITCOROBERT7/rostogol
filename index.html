@@ -110,7 +110,10 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
 .pb.sk{width:62px;height:62px;position:relative}
 .pb.sk svg{width:28px;height:28px}
 .pb.sk .cnt{position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;box-sizing:border-box;border-radius:11px;background:var(--amber);color:#2a1a00;font:800 13px var(--f-body);display:grid;place-items:center;padding:0 5px}
-.pb.sk.empty{opacity:.35}
+.pb.empty{opacity:.35}
+.pb.gun{width:72px;height:72px}
+.pb.gun svg{width:34px;height:34px}
+#pad .jc{align-items:center}
 .pb.sk.live{background:rgba(76,195,255,.55);border-color:#4cc3ff}
 #pad .rgt{display:flex;align-items:flex-end;gap:12px}
 #pad .skc{display:flex;flex-direction:column;gap:14px}
@@ -125,6 +128,7 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
     <div class="pill" id="hearts" aria-label="Vieți"></div>
     <div class="pill"><span class="coin"></span><span id="coins">0/0</span></div>
     <div class="pill" id="timer">0:00</div>
+    <div class="pill" id="wpn" hidden></div>
     <div class="sp"></div>
     <div class="pill" id="lvname">1 · Pajiștea</div>
     <button id="pauseBtn" aria-label="Pauză">II</button>
@@ -140,7 +144,10 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
         <button class="pb sk" id="bS" aria-label="Scut"><svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5z"/></svg><span class="cnt" id="cS">1</span></button>
         <button class="pb sk" id="bF" aria-label="Minge de foc"><svg viewBox="0 0 24 24"><path d="M12 2c1 4 6 6 6 12a6 6 0 0 1-12 0c0-3 1.5-4.5 3-6 0 2 1 3 2 3-1-3 0-6 1-9z"/></svg><span class="cnt" id="cF">2</span></button>
       </div>
+      <div class="skc jc">
+        <button class="pb gun empty" id="bG" aria-label="Trage"><svg viewBox="0 0 24 24"><path d="M2 8h15l1.5-1.5H22V12h-4l-1 1.5h-3.5L12 18H8.5l1.2-4.5H2z"/></svg></button>
     <button class="pb jump" id="bJ" aria-label="Săritură"><svg viewBox="0 0 24 24"><path d="M12 4 4 12.5l1.7 1.6L11 8.6V20h2V8.6l5.3 5.5 1.7-1.6z"/></svg></button>
+      </div>
     </div>
   </div>
 
@@ -186,7 +193,7 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
         <button class="btn ghost" data-act="profile">Profil</button>
       </div>
       <button class="btn ghost small" data-act="settings">Setări</button>
-      <p class="kbd" id="m-tip">Tastatură: ← → mers, Spațiu săritură, F minge de foc, E scut, P pauză.</p>
+      <p class="kbd" id="m-tip">Tastatură: ← → mers, Spațiu săritură (apasă de 2 ori pentru dublu salt), J sau X trage cu arma, F minge de foc, E scut, P pauză.</p>
     </div>
   </section>
 
@@ -195,7 +202,7 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
     <div class="card wide">
       <h2>Alege nivelul</h2>
       <p>Termină un nivel ca să-l deblochezi pe următorul. Ia toate cele 3 stele: termini, aduni 80% din monede și nu pierzi nicio viață.</p>
-      <p>Atenție la dragonii de sus: scuipă foc. Adună sferele portocalii (mingi de foc care țintesc singure inamicii) și pe cele albastre (scut 5 secunde care blochează focul și distruge inamicii la atingere).</p>
+      <p>Atenție la dragonii de sus: scuipă foc. Adună sferele portocalii (mingi de foc care țintesc singure inamicii) și pe cele albastre (scut 5 secunde care blochează focul și distruge inamicii la atingere). Ia armele care plutesc prin nivel și ține apăsat butonul cu pistol: Blaster trage repede, Triplu trage în evantai, Rachetele urmăresc ținta și explodează. Apasă săritura de două ori pentru dublu salt.</p>
       <div class="grid" id="lv-grid"></div>
       <button class="btn ghost" data-act="menu">Înapoi</button>
     </div>
@@ -279,27 +286,28 @@ function ch(d, lines, tag) {
   for (const l of lines) rows.push(l.padEnd(w, '.'));
   return { d, w, rows, tag };
 }
-const START = ch(0, ['........','..P.....','########','########']);
+const START = ch(0, ['........','..P..W..','########','########']);
 const CHECK = ch(0, ['........','...C....','########','########']);
 const GOAL = ch(0, [...Array(11).fill('.........#'), '.....G...#', '##########', '##########']);
 const CHUNKS = [
   ch(1, ['..........','...o.o.o..','..........','..........','##########','##########'], 'flat'),
   ch(1, ['..........','....ooo...','..........','..........','###...####','###...####']),
-  ch(1, ['............','.....ooo....','............','.......E....','############','############']),
+  ch(1, ['............','.....oWo....','............','.......E....','############','############']),
   ch(1, ['..........','....oo....','..........','....^^....','##########','##########']),
   ch(1, ['.......oSo..','.......===..','...oo.......','...===......','............','............','############','############']),
   ch(1, ['.....oo.....','....####....','...######...','..########..','############','############']),
   ch(2, ['..............','.....o..o.....','....==..==....','..............','###........###','###........###']),
   ch(2, ['..............','...ooo..ooo...','..............','..............','##^^^##^^^####','##############']),
-  ch(2, ['................','.....o....o.....','................','....E......E....','################','################']),
+  ch(2, ['................','.....o..W.o.....','................','....E......E....','################','################']),
   ch(2, ['.......oSo..','............','.......###..','.......###..','.......###..','.......###..','.......###..','...B...###..','############','############']),
-  ch(2, ['..............','......F.......','..............','..ooo....ooo..','..............','..............','##############','##############']),
+  ch(2, ['..............','......F.......','..............','..oWo....ooo..','..............','..............','##############','##############']),
   ch(2, ['.....H......','....===.....','............','............','..===.......','............','............','############','############'], 'heart'),
   ch(3, ['................','......oooo......','................','...M............','###..........###','###..........###']),
   ch(3, ['...........oo...','..........###...','.......o........','......###.......','..###...........','#####^^^^^^^^###','################']),
   ch(3, ['....ooooo.....','......E.......','...=======....','..............','....^^^^......','##############','##############']),
   ch(3, ['................','...oo....oo.....','................','................','##....###....###','##....###....###']),
   ch(3, ['................','....F.....F.....','................','.......oo.......','................','................','####...##...####','####...##...####']),
+  ch(2, ['..................','........F.........','..................','....o..W...o......','..................','..E....E.....E....','##################','##################'], 'arena'),
   ch(1, ['......D.......', ...Array(6).fill('..............'), '...S...o.o....', '..............', '..............', '##############', '##############'], 'dragon'),
   ch(3, ['.......D........', ...Array(6).fill('................'), '..S.....oo......', '..===...........', '................', '#####....#######', '#####....#######'], 'dragon')
 ];
@@ -329,7 +337,7 @@ function buildLevel(i) {
   const rows = Array.from({ length: ROWS }, () => '');
   for (const c of seq) for (let r = 0; r < ROWS; r++) rows[r] += c.rows[r];
   const W = rows[0].length;
-  const L = { i, W, pw: W * T, tiles: new Uint8Array(W * ROWS), coins: [], hearts: [], enemies: [], springs: [], checks: [], orbs: [], plats: [], goal: null, start: null, theme: THEMES[themeOf(i)], rnd };
+  const L = { i, W, pw: W * T, tiles: new Uint8Array(W * ROWS), coins: [], hearts: [], enemies: [], springs: [], checks: [], orbs: [], weapons: [], plats: [], goal: null, start: null, theme: THEMES[themeOf(i)], rnd };
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < W; c++) {
     const k = rows[r][c], cx = c * T + T / 2, by = (r + 1) * T;
     switch (k) {
@@ -345,7 +353,8 @@ function buildLevel(i) {
       case 'G': L.goal = { x: cx, y: by }; break;
       case 'P': L.start = { x: cx, y: by - H }; break;
       case 'S': L.orbs.push({ x: cx, y: r * T + 16, got: false, kind: rnd() < 0.6 ? 0 : 1 }); break;
-      case 'D': L.enemies.push({ type: 2, x0: cx, y0: r * T + 16, x: cx, y: r * T + 16, hw: 24, hh: 14, alive: true, die: 0, t: rnd() * 6, hp: 2, cd: 2 + rnd(), hit: 0 }); break;
+      case 'W': { const q = rnd(); L.weapons.push({ x: cx, y: r * T + 16, got: false, kind: q < 0.45 ? 0 : q < 0.8 ? 1 : 2 }); break; }
+      case 'D': L.enemies.push({ type: 2, x0: cx, y0: r * T + 16, x: cx, y: r * T + 16, hw: 24, hh: 14, alive: true, die: 0, t: rnd() * 6, hp: 4, cd: 2 + rnd(), hit: 0 }); break;
       case 'M': L.plats.push({ x0: c * T, x: c * T, y: by, w: 96, range: 224, t: 0, dx: 0 }); break;
     }
   }
@@ -387,6 +396,12 @@ const sfx = {
   breath: () => tone('sawtooth', 170, 80, 0.3, 0.04),
   hit: () => tone('square', 420, 300, 0.07, 0.05),
   orb: () => { tone('triangle', 660, 1320, 0.2, 0.07); },
+  jump2: () => tone('square', 520, 900, 0.12, 0.05),
+  blast: () => tone('square', 900, 300, 0.07, 0.035),
+  spread: () => tone('sawtooth', 600, 180, 0.1, 0.04),
+  rocket: () => tone('sawtooth', 200, 520, 0.25, 0.05),
+  boom: () => { tone('sawtooth', 120, 40, 0.45, 0.09); tone('square', 80, 30, 0.35, 0.06); },
+  pick: () => { tone('square', 440, 880, 0.12, 0.05); tone('square', 880, 1320, 0.12, 0.05, 0.1); },
   win: () => { [523, 659, 784, 1046].forEach((f, k) => tone('square', f, f, 0.14, 0.05, k * 0.11)); }
 };
 
@@ -417,15 +432,15 @@ resize();
 let L = null, levelIdx = 0, state = 'menu', lives = 3, coinsGot = 0, time = 0, lostLife = false, cp = null, endT = 0, overlayShown = false, gameT = 0;
 let camX = 0, menuT = 0;
 let fireN = 0, shieldN = 0, shieldLive = false;
-const P = { shield: 0, face: 1, x: 0, y: 0, vx: 0, vy: 0, ground: false, coyote: 0, buf: 0, rot: 0, sq: 1, inv: 0, knock: 0, spr: 0, plat: null, hidden: false };
-const input = { l: false, r: false, j: false, jp: false };
+const P = { air: 1, flip: 0, shield: 0, face: 1, x: 0, y: 0, vx: 0, vy: 0, ground: false, coyote: 0, buf: 0, rot: 0, sq: 1, inv: 0, knock: 0, spr: 0, plat: null, hidden: false };
+const input = { l: false, r: false, j: false, jp: false, f: false };
 let ballColor = '#ffb627', ballDark = '#b9741a', ballPat = 'dunga';
 function shade(hex, f) { const n = parseInt(hex.slice(1), 16); const r = Math.round(((n >> 16) & 255) * f), g = Math.round(((n >> 8) & 255) * f), b = Math.round((n & 255) * f); return `rgb(${r},${g},${b})`; }
 function applyProfileLook(pr) { ballColor = pr.color; ballDark = shade(pr.color, 0.62); ballPat = pr.pattern; }
 if (save.profile) applyProfileLook(save.profile);
 
 /* particles (pool, no allocation in loop) */
-const PARTS = Array.from({ length: 160 }, () => ({ a: false, x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1, c: '#fff', sz: 3, g: 1 }));
+const PARTS = Array.from({ length: 320 }, () => ({ a: false, x: 0, y: 0, vx: 0, vy: 0, life: 0, max: 1, c: '#fff', sz: 3, g: 1 }));
 function burst(x, y, n, color, speed, grav) {
   for (const p of PARTS) {
     if (n <= 0) break; if (p.a) continue;
@@ -433,32 +448,91 @@ function burst(x, y, n, color, speed, grav) {
     p.a = true; p.x = x; p.y = y; p.vx = Math.cos(ang) * sp; p.vy = Math.sin(ang) * sp - speed * 0.3; p.life = p.max = 0.5 + Math.random() * 0.5; p.c = color; p.sz = 2 + Math.random() * 3; p.g = grav; n--;
   }
 }
-const SHOTS = Array.from({ length: 40 }, () => ({ a: false, x: 0, y: 0, vx: 0, vy: 0, t: 0, own: 0, tgt: null }));
+const SHOTS = Array.from({ length: 90 }, () => ({ a: false, x: 0, y: 0, vx: 0, vy: 0, t: 0, own: 0, tgt: null, c: '#fff' }));
+const WEAPONS = [{ n: 'Blaster', ammo: 40, cd: 0.13, col: '#7df9ff' }, { n: 'Triplu', ammo: 25, cd: 0.3, col: '#ff7ad9' }, { n: 'Rachete', ammo: 8, cd: 0.55, col: '#ffb627' }];
+let weapon = -1, ammo = 0, shotCd = 0, shake = 0, flash = 0, combo = 0, lastKill = -9, kills = 0;
+const RINGS = Array.from({ length: 24 }, () => ({ a: false, x: 0, y: 0, max: 0, life: 0, c: '' }));
+function ring(x, y, max, c) { for (const g of RINGS) if (!g.a) { g.a = true; g.x = x; g.y = y; g.max = max; g.life = 0.35; g.c = c; return; } }
+const TEXTS = Array.from({ length: 14 }, () => ({ a: false, x: 0, y: 0, s: '', c: '', life: 0, big: 0 }));
+function popText(x, y, str, c, big) { for (const g of TEXTS) if (!g.a) { g.a = true; g.x = x; g.y = y; g.s = str; g.c = c; g.life = 0.9; g.big = big; return; } }
+function updateFx(dt) {
+  for (const g of RINGS) if (g.a) { g.life -= dt; if (g.life <= 0) g.a = false; }
+  for (const g of TEXTS) if (g.a) { g.life -= dt; g.y -= 40 * dt; if (g.life <= 0) g.a = false; }
+  shake = Math.max(0, shake - dt * 28); flash = Math.max(0, flash - dt);
+}
+function drawFx() {
+  for (const g of RINGS) { if (!g.a) continue; const k = 1 - g.life / 0.35; ctx.globalAlpha = 1 - k; ctx.strokeStyle = g.c; ctx.lineWidth = 4 * (1 - k) + 1; ctx.beginPath(); ctx.arc(g.x, g.y, g.max * k, 0, 6.283); ctx.stroke(); }
+  ctx.globalAlpha = 1; ctx.textAlign = 'center'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(0,0,0,.6)';
+  for (const g of TEXTS) { if (!g.a) continue; ctx.globalAlpha = Math.min(1, g.life * 2); ctx.font = `800 ${g.big ? 18 : 13}px "Baloo 2", Nunito, sans-serif`; ctx.strokeText(g.s, g.x, g.y); ctx.fillStyle = g.c; ctx.fillText(g.s, g.x, g.y); }
+  ctx.globalAlpha = 1; ctx.textAlign = 'left';
+}
+function explode(x, y) {
+  ring(x, y, 70, '#ffb627'); ring(x, y, 45, '#ff5d1a');
+  burst(x, y, 26, '#ff8a2a', 300, 0.6); burst(x, y, 10, '#fff2c4', 200, 0.3);
+  shake = Math.max(shake, 9); sfx.boom();
+  for (const e of L.enemies) if (e.alive && Math.hypot(e.x - x, e.y - y) < 75) damage(e, 3);
+}
+function aimAt() {
+  let best = null, bd = 440 * 440;
+  for (const e of L.enemies) {
+    if (!e.alive) continue; const dx = e.x - P.x, dy = e.y - P.y;
+    if (dx * P.face <= 0 || Math.abs(dy) > Math.abs(dx) * 1.4) continue;
+    const d = dx * dx + dy * dy; if (d < bd) { bd = d; best = e; }
+  }
+  return best;
+}
+function fireWeapon() {
+  const W = WEAPONS[weapon]; shotCd = W.cd;
+  const tg = aimAt(), a = tg ? Math.atan2(tg.y - P.y, tg.x - P.x) : (P.face > 0 ? 0 : Math.PI);
+  const mx = P.x + Math.cos(a) * 16, my = P.y + Math.sin(a) * 16;
+  if (weapon === 0) { const q = shoot(mx, my, Math.cos(a) * 760, Math.sin(a) * 760, 2); if (q) q.c = W.col; sfx.blast(); }
+  else if (weapon === 1) { for (const da of [-0.2, 0, 0.2]) { const q = shoot(mx, my, Math.cos(a + da) * 680, Math.sin(a + da) * 680, 2); if (q) q.c = W.col; } sfx.spread(); shake = Math.max(shake, 1.5); }
+  else { const q = shoot(mx, my, Math.cos(a) * 360, Math.sin(a) * 360, 3); if (q) { q.c = W.col; q.tgt = tg; } sfx.rocket(); shake = Math.max(shake, 3); }
+  burst(mx, my, 4, W.col, 120, 0); P.vx -= Math.cos(a) * 25;
+  ammo--; if (ammo <= 0) { weapon = -1; popText(P.x, P.y - 30, 'Fără muniție', '#ff5d73', 0); }
+  hudWeapon();
+}
+function hudWeapon() {
+  const el = $('wpn'); $('bG').classList.toggle('empty', weapon < 0);
+  if (weapon < 0) { el.hidden = true; return; }
+  el.hidden = false; el.innerHTML = `<span style="color:${WEAPONS[weapon].col}">${WEAPONS[weapon].n}</span> ${ammo}`;
+}
 function shoot(x, y, vx, vy, own) { for (const q of SHOTS) if (!q.a) { q.a = true; q.x = x; q.y = y; q.vx = vx; q.vy = vy; q.t = 0; q.own = own; q.tgt = null; return q; } return null; }
 function damage(e, n) {
   e.hp = (e.hp || 1) - n; e.hit = 0.25;
   if (e.hp <= 0) {
-    e.alive = false; e.die = 0.4; sfx.stomp();
-    burst(e.x, e.y, e.type === 2 ? 30 : 14, e.type === 2 ? '#ff8a2a' : e.type ? '#9b7bff' : '#ff7aa0', e.type === 2 ? 320 : 220, 1);
-  } else { sfx.hit(); burst(e.x, e.y, 8, '#ffd36b', 160, 0.5); }
+    e.alive = false; e.die = 0.4; sfx.stomp(); kills++;
+    const big = e.type === 2;
+    burst(e.x, e.y, big ? 40 : 18, big ? '#ff8a2a' : e.type ? '#9b7bff' : '#ff7aa0', big ? 360 : 240, 1);
+    burst(e.x, e.y, big ? 14 : 6, '#fff2c4', 200, 0.4);
+    ring(e.x, e.y, big ? 80 : 40, big ? '#ffb627' : '#ffffff');
+    shake = Math.max(shake, big ? 12 : 4); if (big) sfx.boom();
+    combo = (gameT - lastKill < 1.6) ? combo + 1 : 1; lastKill = gameT;
+    popText(e.x, e.y - 24, combo > 1 ? 'COMBO x' + combo : (big ? 'DRAGON DOBORÂT!' : '+1'), combo > 1 ? '#ffb627' : '#ffffff', combo > 1 || big ? 1 : 0);
+  } else { sfx.hit(); burst(e.x, e.y, 8, '#ffd36b', 160, 0.5); popText(e.x, e.y - 24, '-' + n, '#ffd36b', 0); }
 }
 function updateShots(dt) {
   for (const q of SHOTS) {
     if (!q.a) continue;
     q.t += dt;
-    if (q.own === 1 && q.tgt && q.tgt.alive) {
-      const dx = q.tgt.x - q.x, dy = q.tgt.y - q.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, dt * 7);
-      q.vx += (dx / d * 560 - q.vx) * k; q.vy += (dy / d * 560 - q.vy) * k;
+    if ((q.own === 1 || q.own === 3) && q.tgt && q.tgt.alive) {
+      const sp = q.own === 1 ? 560 : 430, dx = q.tgt.x - q.x, dy = q.tgt.y - q.y, d = Math.hypot(dx, dy) || 1, k = Math.min(1, dt * (q.own === 1 ? 7 : 4));
+      q.vx += (dx / d * sp - q.vx) * k; q.vy += (dy / d * sp - q.vy) * k;
     }
+    if (q.own === 3 && Math.random() < 0.6) burst(q.x, q.y, 1, 'rgba(210,210,230,.7)', 40, -0.15);
     q.x += q.vx * dt; q.y += q.vy * dt;
-    if (q.t > 3 || (q.y > 0 && solid(L, Math.floor(q.x / T), Math.floor(q.y / T)))) { q.a = false; burst(q.x, q.y, 6, q.own ? '#9be3ff' : '#ff8a2a', 120, 0.3); continue; }
+    if (q.t > (q.own === 2 ? 1.1 : 3) || (q.y > 0 && solid(L, Math.floor(q.x / T), Math.floor(q.y / T)))) {
+      q.a = false; if (q.own === 3) explode(q.x, q.y); else burst(q.x, q.y, 6, q.own === 0 ? '#ff8a2a' : q.own === 1 ? '#9be3ff' : q.c, 120, 0.3); continue;
+    }
     if (q.own === 0) {
       if (state === 'play' && !P.hidden && Math.abs(q.x - P.x) < H + 7 && Math.abs(q.y - P.y) < H + 7) {
         q.a = false;
         if (P.shield > 0) burst(q.x, q.y, 10, '#4cc3ff', 180, 0.3); else hurt(q.x);
       }
     } else {
-      for (const e of L.enemies) if (e.alive && Math.abs(e.x - q.x) < e.hw + 7 && Math.abs(e.y - q.y) < e.hh + 7) { q.a = false; damage(e, 1); break; }
+      for (const e of L.enemies) if (e.alive && Math.abs(e.x - q.x) < e.hw + 7 && Math.abs(e.y - q.y) < e.hh + 7) {
+        q.a = false; if (q.own === 3) explode(q.x, q.y); else damage(e, q.own === 1 ? 2 : 1); break;
+      }
     }
   }
 }
@@ -498,7 +572,7 @@ function startLevel(i) {
   for (const p of PARTS) p.a = false;
   $('lvname').textContent = (i + 1) + ' · ' + LEVEL_NAMES[i];
   for (const q of SHOTS) q.a = false;
-  fireN = 2; shieldN = 1; P.shield = 0; shieldLive = false; $('bS').classList.remove('live');
+  fireN = 2; shieldN = 1; P.shield = 0; P.air = 1; P.flip = 0; weapon = -1; ammo = 0; shotCd = 0; kills = 0; combo = 0; shake = 0; flash = 0; for (const g of RINGS) g.a = false; for (const g of TEXTS) g.a = false; hudWeapon(); shieldLive = false; $('bS').classList.remove('live');
   hudLives(); hudCoins(); hudTime(); hudSkills();
   state = 'play'; acc = 0; lastT = performance.now();
   show(null); $('hud').hidden = false; $('pad').hidden = false;
@@ -506,14 +580,14 @@ function startLevel(i) {
 function spawnPlayer() { P.x = cp.x; P.y = cp.y; P.vx = P.vy = 0; P.ground = false; P.coyote = P.buf = P.knock = P.spr = 0; P.plat = null; P.sq = 1; P.hidden = false; }
 function hurt(fromX) {
   if (P.inv > 0 || P.shield > 0 || state !== 'play') return;
-  lives--; lostLife = true; hudLives(); sfx.hurt(); vib(60);
+  lives--; lostLife = true; hudLives(); sfx.hurt(); vib(60); shake = 10; flash = 0.35; combo = 0;
   burst(P.x, P.y, 14, '#ff5d73', 260, 1);
   if (lives <= 0) return die();
   P.inv = 1.5; P.knock = 0.25; P.vx = (P.x < fromX ? -1 : 1) * 260; P.vy = -420; P.spr = 0.3;
 }
 function fell() {
   if (state !== 'play') return;
-  lives--; lostLife = true; hudLives(); sfx.hurt(); vib(80);
+  lives--; lostLife = true; hudLives(); sfx.hurt(); vib(80); shake = 8; flash = 0.35; combo = 0;
   if (lives <= 0) return die();
   spawnPlayer(); P.inv = 1.5;
   burst(P.x, P.y, 12, '#ffffff', 200, 0.5);
@@ -573,12 +647,17 @@ function updatePlayer(dt) {
   const dir = (input.r ? 1 : 0) - (input.l ? 1 : 0);
   if (dir) P.face = dir;
   if (P.shield > 0) P.shield -= dt;
+  shotCd -= dt; if (input.f && weapon >= 0 && shotCd <= 0) fireWeapon();
   if (P.knock > 0) P.knock -= dt;
   else if (dir) { P.vx += dir * (P.ground ? 2400 : 1500) * dt; if (Math.abs(P.vx) > MAXV) P.vx = Math.sign(P.vx) * MAXV; }
   else { const f = (P.ground ? 1800 : 420) * dt; P.vx = Math.abs(P.vx) <= f ? 0 : P.vx - Math.sign(P.vx) * f; }
   if (input.jp) { P.buf = 0.12; input.jp = false; }
   if (P.ground) P.coyote = 0.1; else P.coyote -= dt;
   if (P.buf > 0 && P.coyote > 0) { P.vy = -JUMP; P.buf = 0; P.coyote = 0; P.ground = false; P.plat = null; P.spr = 0; sfx.jump(); }
+  else if (P.buf > 0 && P.air > 0 && !P.ground && P.coyote <= 0) {
+    P.vy = -JUMP * 0.92; P.air--; P.buf = 0; P.spr = 0; P.flip = 0.4; sfx.jump2();
+    ring(P.x, P.y + H, 24, '#ffffff'); burst(P.x, P.y + H, 10, 'rgba(255,255,255,.85)', 170, 0.2);
+  }
   P.buf -= dt;
   if (P.spr > 0) P.spr -= dt; else if (!input.j && P.vy < -320) P.vy = -320;
   P.vy = Math.min(P.vy + GRAV * dt, 900);
@@ -608,9 +687,11 @@ function updatePlayer(dt) {
     const r = Math.floor((P.y - H) / T);
     for (let c = c0; c <= c1; c++) if (solid(L, c, r) && r >= 0) { P.y = (r + 1) * T + H; P.vy = 0; break; }
   }
+  if (P.ground) P.air = 1;
   if (P.ground && !wasGround && impact > 380) { P.sq = 0.72; burst(P.x, P.y + H, 5, 'rgba(255,255,255,.7)', 90, 0.4); }
   P.sq += (1 - P.sq) * Math.min(1, dt * 12);
   P.rot += P.vx * dt / 12;
+  if (P.flip > 0) { P.flip -= dt; P.rot += 18 * dt * P.face; }
   if (P.y - H > WH + 60) fell();
 }
 function interactions() {
@@ -626,14 +707,19 @@ function interactions() {
     k.got = true; if (k.kind === 0) fireN += 2; else shieldN += 1; hudSkills(); sfx.orb();
     burst(k.x, k.y, 12, k.kind === 0 ? '#ff8a2a' : '#4cc3ff', 170, 0.3);
   }
-  for (const sp of L.springs) if (P.vy >= -10 && Math.abs(sp.x - P.x) < 12 + H && P.y + H > sp.y - 14 && P.y - H < sp.y) { P.vy = -SPRING; P.spr = 0.6; P.ground = false; P.plat = null; sp.k = 1; sfx.spring(); }
+  for (const k of L.weapons) if (!k.got && Math.abs(k.x - P.x) < 22 && Math.abs(k.y - P.y) < 22) {
+    k.got = true; if (weapon === k.kind) ammo += WEAPONS[k.kind].ammo; else { weapon = k.kind; ammo = WEAPONS[k.kind].ammo; }
+    hudWeapon(); sfx.pick(); ring(k.x, k.y, 36, WEAPONS[k.kind].col); burst(k.x, k.y, 12, WEAPONS[k.kind].col, 180, 0.3);
+    popText(k.x, k.y - 22, WEAPONS[k.kind].n + '!', WEAPONS[k.kind].col, 1);
+  }
+  for (const sp of L.springs) if (P.vy >= -10 && Math.abs(sp.x - P.x) < 12 + H && P.y + H > sp.y - 14 && P.y - H < sp.y) { P.vy = -SPRING; P.spr = 0.6; P.ground = false; P.plat = null; sp.k = 1; P.air = 1; sfx.spring(); ring(sp.x, sp.y - 10, 30, '#ff5d73'); }
   for (const sp of L.springs) if (sp.k > 0) sp.k = Math.max(0, sp.k - 0.05);
   for (const k of L.checks) if (!k.on && Math.abs(k.x - P.x) < 24 && P.y > k.y - 80) { k.on = true; cp = { x: k.x, y: k.y - H }; sfx.check(); burst(k.x, k.y - 50, 12, '#3ee6a8', 180, 0.4); }
   for (const e of L.enemies) {
     if (!e.alive) continue;
     if (Math.abs(e.x - P.x) < e.hw + H - 2 && Math.abs(e.y - P.y) < e.hh + H - 2) {
       if (P.shield > 0) { if (!(e.hit > 0)) damage(e, e.type === 2 ? 1 : 9); }
-      else if (P.vy > 60 && P.y + H - (e.y - e.hh) < 14) { damage(e, e.type === 2 ? 1 : 9); P.vy = -STOMP; P.spr = 0.15; vib(25); }
+      else if (P.vy > 60 && P.y + H - (e.y - e.hh) < 14) { damage(e, e.type === 2 ? 1 : 9); P.vy = -STOMP; P.spr = 0.15; P.air = 1; vib(25); }
       else hurt(e.x);
     }
   }
@@ -646,7 +732,7 @@ function updateCamera(dt) {
 }
 function step(dt) {
   gameT += dt;
-  updatePlats(dt); updateEnemies(dt); updateShots(dt); updateParticles(dt);
+  updatePlats(dt); updateEnemies(dt); updateShots(dt); updateParticles(dt); updateFx(dt);
   if (state !== 'play') {
     endT -= dt;
     if (endT <= 0 && !overlayShown) { overlayShown = true; if (state === 'dead') show('s-over'); else showWin(); }
@@ -837,7 +923,7 @@ function drawDragon(e) {
   ctx.fillStyle = '#1b1030'; ctx.beginPath(); ctx.arc(29.5, -11, 1.8, 0, 6.283); ctx.fill();
   if (e.cd < 0.6) { ctx.fillStyle = `rgba(255,170,40,${0.5 + 0.5 * Math.sin(gameT * 40)})`; ctx.beginPath(); ctx.arc(36, -5, 5, 0, 6.283); ctx.fill(); }
   ctx.restore(); ctx.globalAlpha = 1;
-  if (e.hp < 2) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(e.x - 16, e.y - 30, 32, 4); ctx.fillStyle = '#ff5d73'; ctx.fillRect(e.x - 16, e.y - 30, 16 * e.hp, 4); }
+  if (e.hp < 4) { ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(e.x - 16, e.y - 30, 32, 4); ctx.fillStyle = '#ff5d73'; ctx.fillRect(e.x - 16, e.y - 30, 8 * e.hp, 4); }
 }
 function drawShots() {
   for (const q of SHOTS) {
@@ -846,11 +932,30 @@ function drawShots() {
       ctx.fillStyle = 'rgba(255,120,30,.35)'; ctx.beginPath(); ctx.arc(q.x - q.vx * 0.04, q.y - q.vy * 0.04, 7, 0, 6.283); ctx.fill();
       ctx.fillStyle = '#ff6a1a'; ctx.beginPath(); ctx.arc(q.x, q.y, 8, 0, 6.283); ctx.fill();
       ctx.fillStyle = '#ffe08a'; ctx.beginPath(); ctx.arc(q.x, q.y, 4, 0, 6.283); ctx.fill();
-    } else {
+    } else if (q.own === 1) {
       ctx.fillStyle = 'rgba(255,170,40,.35)'; ctx.beginPath(); ctx.arc(q.x - q.vx * 0.03, q.y - q.vy * 0.03, 6, 0, 6.283); ctx.fill();
       ctx.fillStyle = '#ffb627'; ctx.beginPath(); ctx.arc(q.x, q.y, 7, 0, 6.283); ctx.fill();
       ctx.fillStyle = '#fff6d6'; ctx.beginPath(); ctx.arc(q.x, q.y, 3, 0, 6.283); ctx.fill();
+    } else if (q.own === 2) {
+      ctx.strokeStyle = q.c; ctx.lineWidth = 4; ctx.lineCap = 'round';
+      ctx.beginPath(); ctx.moveTo(q.x - q.vx * 0.02, q.y - q.vy * 0.02); ctx.lineTo(q.x, q.y); ctx.stroke();
+      ctx.fillStyle = '#fff'; ctx.fillRect(q.x - 1.5, q.y - 1.5, 3, 3);
+    } else {
+      const a = Math.atan2(q.vy, q.vx);
+      ctx.save(); ctx.translate(q.x, q.y); ctx.rotate(a);
+      ctx.fillStyle = '#ff6a1a'; ctx.beginPath(); ctx.moveTo(-9, -3); ctx.lineTo(-15 - Math.random() * 6, 0); ctx.lineTo(-9, 3); ctx.fill();
+      ctx.fillStyle = '#d8dcef'; ctx.fillRect(-9, -4, 14, 8); ctx.fillStyle = '#ff5d73'; ctx.beginPath(); ctx.moveTo(5, -4); ctx.lineTo(10, 0); ctx.lineTo(5, 4); ctx.fill();
+      ctx.restore();
     }
+  }
+}
+function drawWeaponsPk(x0, x1) {
+  for (const k of L.weapons) {
+    if (k.got || k.x < x0 - 20 || k.x > x1 + 20) continue;
+    const y = k.y + Math.sin(gameT * 3 + k.x) * 3, W = WEAPONS[k.kind];
+    ctx.fillStyle = 'rgba(255,255,255,.2)'; ctx.beginPath(); ctx.arc(k.x, y, 16 + Math.sin(gameT * 6) * 2, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#2a335c'; ctx.fillRect(k.x - 11, y - 4, 20, 8); ctx.fillRect(k.x - 9, y + 2, 6, 8);
+    ctx.fillStyle = W.col; ctx.fillRect(k.x + 5, y - 3, 8, 6); ctx.fillRect(k.x - 11, y - 7, 16, 3);
   }
 }
 function drawOrbs(x0, x1) {
@@ -872,15 +977,17 @@ function render() {
   drawSky(th);
   drawHills(th.far, 0.25, WH - 130, 50, 0.004, 0.011);
   drawHills(th.near, 0.5, WH - 70, 34, 0.006, 0.017);
-  const px = Math.round(camX * s);
+  const shx = shake > 0 ? Math.round((Math.random() - 0.5) * shake * dpr * 2) : 0, shy = shake > 0 ? Math.round((Math.random() - 0.5) * shake * dpr * 2) : 0;
+  const px = Math.round(camX * s) - shx, oy = offY + shy;
   const c0 = Math.max(0, Math.floor(camX / CW)), c1 = Math.min(Math.ceil(L.W / CHUNK_COLS) - 1, Math.floor((camX + viewW) / CW));
-  for (let ci = c0; ci <= c1; ci++) ctx.drawImage(getChunk(ci), Math.round(ci * CW * s) - px, offY);
+  for (let ci = c0; ci <= c1; ci++) ctx.drawImage(getChunk(ci), Math.round(ci * CW * s) - px, oy);
   if (chunkCache.size > (c1 - c0 + 4)) for (const k of chunkCache.keys()) if (k < c0 - 1 || k > c1 + 1) chunkCache.delete(k);
   const bottom = offY + Math.round(WH * s);
   if (bottom < cv.height) { ctx.fillStyle = th.under; ctx.fillRect(0, bottom, cv.width, cv.height - bottom); }
-  ctx.setTransform(s, 0, 0, s, -px, offY);
+  ctx.setTransform(s, 0, 0, s, -px, oy);
   drawEntities(camX, camX + viewW);
   drawOrbs(camX, camX + viewW);
+  drawWeaponsPk(camX, camX + viewW);
   if (state !== 'menu' && !P.hidden && !(P.inv > 0 && Math.floor(P.inv * 10) % 2 === 0)) {
     drawBall(ctx, P.x, P.y, 12, P.rot, ballColor, ballDark, ballPat, 2 - P.sq, P.sq);
   }
@@ -888,10 +995,18 @@ function render() {
     ctx.fillStyle = 'rgba(76,195,255,.18)'; ctx.strokeStyle = 'rgba(140,220,255,.9)'; ctx.lineWidth = 2.5;
     ctx.beginPath(); ctx.arc(P.x, P.y, 19 + Math.sin(gameT * 10), 0, 6.283); ctx.fill(); ctx.stroke();
   }
+  if (state === 'play' && weapon >= 0 && !P.hidden) {
+    const tg = aimAt(), a = tg ? Math.atan2(tg.y - P.y, tg.x - P.x) : (P.face > 0 ? 0 : Math.PI);
+    ctx.save(); ctx.translate(P.x, P.y); ctx.rotate(a); if (Math.cos(a) < 0) ctx.scale(1, -1);
+    ctx.fillStyle = '#2a335c'; ctx.fillRect(8, -3, 15, 6); ctx.fillStyle = WEAPONS[weapon].col; ctx.fillRect(18, -2, 6, 4);
+    ctx.restore();
+  }
   drawShots();
+  drawFx();
   for (const p of PARTS) { if (!p.a) continue; ctx.globalAlpha = p.life / p.max; ctx.fillStyle = p.c; ctx.fillRect(p.x - p.sz / 2, p.y - p.sz / 2, p.sz, p.sz); }
   ctx.globalAlpha = 1;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (flash > 0) { ctx.fillStyle = `rgba(255,40,70,${flash * 0.55})`; ctx.fillRect(0, 0, cv.width, cv.height); }
   if (save.settings.fps) {
     ctx.fillStyle = 'rgba(0,0,0,.5)'; ctx.fillRect(cv.width - 84 * dpr, cv.height - 30 * dpr, 78 * dpr, 24 * dpr);
     ctx.fillStyle = fpsShown >= 55 ? '#3ee6a8' : fpsShown >= 40 ? '#ffb627' : '#ff5d73';
@@ -989,7 +1104,7 @@ function showWin() {
   for (let k = 0; k < 3; k++) { sp[k].classList.remove('on'); setTimeout(() => k < lastWin.stars && sp[k].classList.add('on'), 150 + k * 220); }
   const c2 = coinsGot >= Math.ceil(L.totalCoins * 0.8);
   $('w-why').innerHTML = `<span class="ok">★ Ai ajuns la steag</span><span class="${c2 ? 'ok' : ''}">★ Monede: ${coinsGot}/${L.totalCoins} (ai nevoie de ${Math.ceil(L.totalCoins * 0.8)})</span><span class="${!lostLife ? 'ok' : ''}">★ ${lostLife ? 'Ai pierdut cel puțin o viață' : 'Nicio viață pierdută'}</span>`;
-  $('w-stats').innerHTML = `<span class="chip">Timp <b>${fmtTime(time)}</b></span>${lastWin.isRecord ? '<span class="chip"><b>Record nou</b></span>' : ''}`;
+  $('w-stats').innerHTML = `<span class="chip">Timp <b>${fmtTime(time)}</b></span><span class="chip">Inamici doborâți <b>${kills}</b></span>${lastWin.isRecord ? '<span class="chip"><b>Record nou</b></span>' : ''}`;
   $('w-next').hidden = last;
   show('s-win');
 }
@@ -1027,7 +1142,7 @@ document.addEventListener('click', e => {
 $('pauseBtn').addEventListener('click', pause);
 
 /* ================= input ================= */
-function resetInput() { input.l = input.r = input.j = input.jp = false; for (const id of ['bL', 'bR', 'bJ']) $(id).classList.remove('on'); }
+function resetInput() { input.l = input.r = input.j = input.jp = input.f = false; for (const id of ['bL', 'bR', 'bJ', 'bG']) $(id).classList.remove('on'); }
 function bindPad(id, key) {
   const el = $(id);
   const down = e => { e.preventDefault(); audioInit(); try { el.setPointerCapture(e.pointerId); } catch (x) {} if (key === 'j' && !input.j) input.jp = true; input[key] = true; el.classList.add('on'); };
@@ -1036,13 +1151,13 @@ function bindPad(id, key) {
   el.addEventListener('pointerup', up); el.addEventListener('pointercancel', up); el.addEventListener('lostpointercapture', up);
   el.addEventListener('contextmenu', e => e.preventDefault());
 }
-bindPad('bL', 'l'); bindPad('bR', 'r'); bindPad('bJ', 'j');
+bindPad('bL', 'l'); bindPad('bR', 'r'); bindPad('bJ', 'j'); bindPad('bG', 'f');
 for (const [id, fn] of [['bF', () => useFire()], ['bS', () => useShield()]]) {
   const el = $(id);
   el.addEventListener('pointerdown', e => { e.preventDefault(); audioInit(); fn(); el.classList.add('on'); setTimeout(() => el.classList.remove('on'), 120); });
   el.addEventListener('contextmenu', e => e.preventDefault());
 }
-const KEYS = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'j', KeyW: 'j', Space: 'j' };
+const KEYS = { ArrowLeft: 'l', KeyA: 'l', ArrowRight: 'r', KeyD: 'r', ArrowUp: 'j', KeyW: 'j', Space: 'j', KeyJ: 'f', KeyX: 'f' };
 window.addEventListener('keydown', e => {
   if (e.target.tagName === 'INPUT') return;
   const k = KEYS[e.code];
@@ -1055,7 +1170,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) pause
 window.addEventListener('blur', () => { if (state === 'play') resetInput(); });
 document.addEventListener('contextmenu', e => { if (e.target === cv) e.preventDefault(); });
 
-window.__rg = { P, input, get state() { return state; }, get L() { return L; }, get lives() { return lives; }, startLevel, buildLevel, useFire, useShield, SHOTS, get fireN() { return fireN; }, get fps() { return fpsShown; } };
+window.__rg = { P, input, get state() { return state; }, get L() { return L; }, get lives() { return lives; }, startLevel, buildLevel, useFire, useShield, SHOTS, get fireN() { return fireN; }, get weapon() { return weapon; }, get kills() { return kills; }, giveWeapon(k) { weapon = k; ammo = WEAPONS[k].ammo; hudWeapon(); }, get fps() { return fpsShown; } };
 
 goMenu();
 requestAnimationFrame(frame);
