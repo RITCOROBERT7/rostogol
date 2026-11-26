@@ -89,6 +89,33 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
 .why{display:grid;gap:4px;font-size:13px;color:var(--muted)}
 .why .ok{color:var(--mint)}
 
+/* meta: xp, shop, missions, toast */
+.xp{display:flex;align-items:center;gap:10px}
+.xp .bar{flex:1;height:10px;border-radius:999px;background:var(--night);overflow:hidden}
+.xp .bar i{display:block;height:100%;background:linear-gradient(90deg,var(--mint),#4cc3ff);border-radius:999px}
+.xp b{font-family:var(--f-display);font-size:18px;color:var(--mint);white-space:nowrap}
+.wallet{display:inline-flex;align-items:center;gap:6px}
+.wallet::before{content:"";width:14px;height:14px;border-radius:50%;background:var(--amber);box-shadow:inset -3px -3px 0 #c98410}
+.shop{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.item{background:var(--panel2);border-radius:16px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;min-width:0}
+.item .sw2{width:46px;height:46px;border-radius:50%;box-shadow:inset -6px -6px 0 rgba(0,0,0,.22)}
+.item .nm{font-weight:800}
+.item .sub{font-size:12px;color:var(--muted)}
+.item .btn{font-size:16px;padding:8px 10px;width:100%}
+.item .btn.owned{background:var(--mint);color:#06261b;box-shadow:0 4px 0 #1f9d72}
+.mis{display:grid;gap:10px}
+.mi{background:var(--panel2);border-radius:14px;padding:12px;display:grid;gap:6px}
+.mi .top{display:flex;justify-content:space-between;gap:10px;font-weight:800}
+.mi .top span:last-child{color:var(--amber);white-space:nowrap}
+.mi.done{outline:2px solid var(--mint)}
+.mi.done .top span:last-child{color:var(--mint)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.days div{background:var(--panel2);border-radius:10px;padding:8px 2px;text-align:center;font-size:12px;font-weight:800;color:var(--muted)}
+.days div b{display:block;color:var(--ink);font-size:14px}
+.days div.got{background:rgba(62,230,168,.2);color:var(--mint)}
+.days div.now{outline:2px solid var(--amber);color:var(--amber)}
+.big-num{font-family:var(--f-display);font-size:56px;line-height:1;color:var(--amber);text-align:center}
+#toast{position:absolute;left:50%;top:calc(env(safe-area-inset-top,0px) + 58px);transform:translateX(-50%);background:var(--mint);color:#06261b;font-weight:800;padding:10px 16px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.35);max-width:calc(100% - 32px);text-align:center;z-index:5;pointer-events:none}
 /* HUD */
 #hud{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:max(12px,env(safe-area-inset-left,0px));right:max(12px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:8px;pointer-events:none}
 #hud .pill{background:rgba(12,15,30,.62);border-radius:999px;padding:6px 12px;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:6px;backdrop-filter:blur(4px)}
@@ -123,6 +150,7 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
 
 <div id="app">
   <canvas id="cv" aria-label="Ecranul jocului"></canvas>
+  <div id="toast" hidden></div>
 
   <div id="hud" hidden>
     <div class="pill" id="hearts" aria-label="Vieți"></div>
@@ -183,16 +211,24 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
     <div class="card">
       <h1>R<span class="dot"></span>stogol</h1>
       <p id="m-hello">Salut!</p>
+      <div class="xp"><b id="m-lvl">Nivel 1</b><div class="bar"><i id="m-xp" style="width:0%"></i></div></div>
       <div class="stats">
+        <span class="chip wallet"><b id="m-wallet">0</b></span>
         <span class="chip">Stele <b id="m-stars">0</b>/30</span>
         <span class="chip">Niveluri <b id="m-done">0</b>/10</span>
+        <span class="chip">Serie <b id="m-streak">0</b> zile</span>
       </div>
       <button class="btn" data-act="continue" id="m-play">Joacă</button>
+      <button class="btn ghost" data-act="endless" id="m-endless">Fără sfârșit</button>
       <div class="row">
-        <button class="btn ghost" data-act="levels">Niveluri</button>
-        <button class="btn ghost" data-act="profile">Profil</button>
+        <button class="btn ghost" data-act="shop">Magazin</button>
+        <button class="btn ghost" data-act="missions" id="m-mis">Misiuni</button>
       </div>
-      <button class="btn ghost small" data-act="settings">Setări</button>
+      <div class="row">
+        <button class="btn ghost small" data-act="levels">Niveluri</button>
+        <button class="btn ghost small" data-act="profile">Profil</button>
+        <button class="btn ghost small" data-act="settings">Setări</button>
+      </div>
       <p class="kbd" id="m-tip">Tastatură: ← → mers, Spațiu săritură (apasă de 2 ori pentru dublu salt), J sau X trage cu arma, F minge de foc, E scut, P pauză.</p>
     </div>
   </section>
@@ -202,7 +238,7 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
     <div class="card wide">
       <h2>Alege nivelul</h2>
       <p>Termină un nivel ca să-l deblochezi pe următorul. Ia toate cele 3 stele: termini, aduni 80% din monede și nu pierzi nicio viață.</p>
-      <p>Atenție la dragonii de sus: scuipă foc. Adună sferele portocalii (mingi de foc care țintesc singure inamicii) și pe cele albastre (scut 5 secunde care blochează focul și distruge inamicii la atingere). Ia armele care plutesc prin nivel și ține apăsat butonul cu pistol: Blaster trage repede, Triplu trage în evantai, Rachetele urmăresc ținta și explodează. Apasă săritura de două ori pentru dublu salt.</p>
+      <p>Atenție la dragonii de sus: scuipă foc. Adună sferele portocalii (mingi de foc care țintesc singure inamicii) și pe cele albastre (scut 5 secunde care blochează focul și distruge inamicii la atingere). Ia armele care plutesc prin nivel și ține apăsat butonul cu pistol: Blaster trage repede, Triplu trage în evantai, Rachetele urmăresc ținta și explodează. Apasă săritura de două ori pentru dublu salt. Nou prin niveluri: lăzi pe care le spargi cu capul sau cu arma (au monede), pad-uri TURBO, platforme de piatră care se prăbușesc, ferăstraie care urcă și coboară și comori secrete sus, la care ajungi doar cu dublu salt.</p>
       <div class="grid" id="lv-grid"></div>
       <button class="btn ghost" data-act="menu">Înapoi</button>
     </div>
@@ -232,11 +268,57 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
     </div>
   </section>
 
+  <!-- SHOP -->
+  <section class="screen" id="s-shop" hidden>
+    <div class="card wide">
+      <div class="row" style="align-items:center"><h2>Magazin</h2><span class="chip wallet" style="flex:0 0 auto"><b id="sh-wallet">0</b></span></div>
+      <p>Monedele le strângi jucând: monede din nivel, inamici doborâți, stele, misiuni și recompensa zilnică. Nimic de aici nu se cumpără cu bani reali.</p>
+      <div class="label">Skinuri pentru bilă</div>
+      <div class="shop" id="sh-skins"></div>
+      <div class="label">Upgrade-uri</div>
+      <div class="shop" id="sh-ups"></div>
+      <button class="btn ghost" data-act="menu">Înapoi</button>
+    </div>
+  </section>
+
+  <!-- MISSIONS -->
+  <section class="screen" id="s-missions" hidden>
+    <div class="card">
+      <h2>Misiuni de azi</h2>
+      <p>3 misiuni noi în fiecare zi. Recompensa se adaugă singură când termini o misiune.</p>
+      <div class="mis" id="mi-list"></div>
+      <button class="btn ghost" data-act="menu">Înapoi</button>
+    </div>
+  </section>
+
+  <!-- DAILY -->
+  <section class="screen" id="s-daily" hidden>
+    <div class="card">
+      <h2 id="dl-title">Recompensa zilnică</h2>
+      <p id="dl-txt">Intră în fiecare zi ca seria să crească. Ziua 7 dă cea mai mare recompensă.</p>
+      <div class="days" id="dl-days"></div>
+      <div class="big-num" id="dl-amt">+30</div>
+      <button class="btn" data-act="claim">Ia recompensa</button>
+    </div>
+  </section>
+
+  <!-- ENDLESS RESULT -->
+  <section class="screen" id="s-endres" hidden>
+    <div class="card">
+      <h2 id="er-title">Tură terminată</h2>
+      <div class="big-num" id="er-dist">0 m</div>
+      <p id="er-rec" style="text-align:center"></p>
+      <div class="stats" id="er-stats"></div>
+      <button class="btn" data-act="restart">Încă o tură</button>
+      <button class="btn ghost" data-act="menu">Meniu</button>
+    </div>
+  </section>
+
   <!-- GAME OVER -->
   <section class="screen" id="s-over" hidden>
     <div class="card">
       <h2>Ai rămas fără vieți</h2>
-      <p id="ov-txt">Nivelul o ia de la capăt cu 3 vieți.</p>
+      <p id="ov-txt">Nivelul o ia de la capăt.</p>
       <button class="btn" data-act="restart">Încearcă din nou</button>
       <button class="btn ghost" data-act="menu">Meniu</button>
     </div>
@@ -295,7 +377,7 @@ const CHUNKS = [
   ch(1, ['............','.....oWo....','............','.......E....','############','############']),
   ch(1, ['..........','....oo....','..........','....^^....','##########','##########']),
   ch(1, ['.......oSo..','.......===..','...oo.......','...===......','............','............','############','############']),
-  ch(1, ['.....oo.....','....####....','...######...','..########..','############','############']),
+  ch(1, ['......*.....','............','............','.....oo.....','....####....','...######...','..########..','############','############']),
   ch(2, ['..............','.....o..o.....','....==..==....','..............','###........###','###........###']),
   ch(2, ['..............','...ooo..ooo...','..............','..............','##^^^##^^^####','##############']),
   ch(2, ['................','.....o..W.o.....','................','....E......E....','################','################']),
@@ -307,25 +389,32 @@ const CHUNKS = [
   ch(3, ['....ooooo.....','......E.......','...=======....','..............','....^^^^......','##############','##############']),
   ch(3, ['................','...oo....oo.....','................','................','##....###....###','##....###....###']),
   ch(3, ['................','....F.....F.....','................','.......oo.......','................','................','####...##...####','####...##...####']),
+  ch(1, ['........*.......','................','................','................','......oooo......','................','..>.............','#####......#####','#####......#####'], 'boost'),
+  ch(1, ['...........X..','..............','......XX......','....X.XX.X....','##############','##############'], 'crates'),
+  ch(2, ['................','....o..o..o.....','...UU.UU.UU.....','................','##...........###','##...........###'], 'crumble'),
+  ch(3, ['................','.....Z....Z.....','................','...o.......o....','..===....===....','................','################','################'], 'saws'),
+  ch(3, ['.........*..........','....................','....................','..........o.o.o.....','.....UU..UUUU..UU...','....................','###..............###','###..............###'], 'run'),
   ch(2, ['..................','........F.........','..................','....o..W...o......','..................','..E....E.....E....','##################','##################'], 'arena'),
   ch(1, ['......D.......', ...Array(6).fill('..............'), '...S...o.o....', '..............', '..............', '##############', '##############'], 'dragon'),
   ch(3, ['.......D........', ...Array(6).fill('................'), '..S.....oo......', '..===...........', '................', '#####....#######', '#####....#######'], 'dragon')
 ];
 const DRAGON1 = CHUNKS[CHUNKS.length - 2];
+const BOOST = CHUNKS.find(c => c.tag === 'boost'), CRATES = CHUNKS.find(c => c.tag === 'crates');
 const FLAT = CHUNKS[0];
 
 function mulberry32(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
-function buildLevel(i) {
-  const rnd = mulberry32(9137 + i * 101);
-  const maxD = i < 2 ? 1 : i < 5 ? 2 : 3;
-  const n = 4 + i;
+function buildLevel(i, endless) {
+  const rnd = endless ? mulberry32((Date.now() & 0xffffff) + 7) : mulberry32(9137 + i * 101);
+  let maxD = i < 2 ? 1 : i < 5 ? 2 : 3;
+  const n = endless ? 70 : 4 + i;
   const seq = [START];
-  if (i === 0) seq.push(FLAT, DRAGON1);
+  if (i === 0 && !endless) seq.push(FLAT, CRATES, DRAGON1, BOOST);
   let last = null, hearts = 0, dragons = 0;
   for (let k = 0; k < n; k++) {
-    if (k === Math.floor(n / 2)) seq.push(CHECK);
-    const pool = CHUNKS.filter(c => c.d <= maxD && c !== last && !(c.tag === 'heart' && hearts > 0) && !(c.tag === 'dragon' && dragons >= 2));
+    if (endless) maxD = k < 6 ? 1 : k < 18 ? 2 : 3;
+    if (!endless && k === Math.floor(n / 2)) seq.push(CHECK);
+    const pool = CHUNKS.filter(c => c.d <= maxD && c !== last && !(c.tag === 'heart' && hearts > (endless ? 8 : 0)) && !(c.tag === 'dragon' && dragons >= (endless ? 99 : 2)));
     let tot = 0; const ws = pool.map(c => { const w = (c.d === maxD && i >= 2) ? 3 : 1; tot += w; return w; });
     let r = rnd() * tot, pick = pool[pool.length - 1];
     for (let j = 0; j < pool.length; j++) { r -= ws[j]; if (r <= 0) { pick = pool[j]; break; } }
@@ -337,13 +426,18 @@ function buildLevel(i) {
   const rows = Array.from({ length: ROWS }, () => '');
   for (const c of seq) for (let r = 0; r < ROWS; r++) rows[r] += c.rows[r];
   const W = rows[0].length;
-  const L = { i, W, pw: W * T, tiles: new Uint8Array(W * ROWS), coins: [], hearts: [], enemies: [], springs: [], checks: [], orbs: [], weapons: [], plats: [], goal: null, start: null, theme: THEMES[themeOf(i)], rnd };
+  const L = { i, W, pw: W * T, tiles: new Uint8Array(W * ROWS), coins: [], hearts: [], enemies: [], springs: [], checks: [], orbs: [], weapons: [], boosts: [], saws: [], gems: [], plats: [], goal: null, start: null, theme: THEMES[themeOf(i)], rnd };
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < W; c++) {
     const k = rows[r][c], cx = c * T + T / 2, by = (r + 1) * T;
     switch (k) {
       case '#': L.tiles[r * W + c] = 1; break;
       case '=': L.tiles[r * W + c] = 2; break;
       case '^': L.tiles[r * W + c] = 3; break;
+      case 'X': L.tiles[r * W + c] = 4; break;
+      case '>': L.boosts.push({ x: cx, y: by }); break;
+      case 'Z': L.saws.push({ x: cx, y0: r * T + 16, y: r * T + 16, t: rnd() * 6 }); break;
+      case '*': L.gems.push({ x: cx, y: r * T + 16, got: false }); break;
+      case 'U': L.plats.push({ type: 1, x0: c * T, x: c * T, y: r * T, w: 32, t: 0, dx: 0, timer: -1, down: 0 }); break;
       case 'o': L.coins.push({ x: cx, y: r * T + 16, got: false }); break;
       case 'H': L.hearts.push({ x: cx, y: r * T + 16, got: false }); break;
       case 'E': L.enemies.push({ type: 0, x: cx, y: by - 11, vx: -55, hw: 13, hh: 11, alive: true, die: 0, t: 0 }); break;
@@ -362,13 +456,15 @@ function buildLevel(i) {
   return L;
 }
 function tileAt(L, c, r) { if (r < 0 || r >= ROWS || c < 0 || c >= L.W) return 0; return L.tiles[r * L.W + c]; }
-function solid(L, c, r) { if (c < 0 || c >= L.W) return true; if (r < 0 || r >= ROWS) return false; return L.tiles[r * L.W + c] === 1; }
+function solid(L, c, r) { if (c < 0 || c >= L.W) return true; if (r < 0 || r >= ROWS) return false; const t = L.tiles[r * L.W + c]; return t === 1 || t === 4; }
 
 /* ================= save ================= */
 const KEY = 'rostogol.v1';
-function defSave() { return { v: 1, profile: null, unlocked: 0, levels: {}, settings: { sound: true, fps: false } }; }
+function defSave() { return { v: 1, profile: null, unlocked: 0, levels: {}, settings: { sound: true, fps: false }, wallet: 0, xp: 0, skins: [], up: {}, daily: { day: '', streak: 0 }, missions: { day: '', list: [] }, endlessBest: 0 }; }
 let save = defSave();
 try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && j.v === 1) save = Object.assign(defSave(), j); } catch (e) {}
+function normSave() { const d = defSave(); for (const k in d) if (save[k] == null) save[k] = d[k]; }
+normSave();
 function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch (e) {} }
 
 /* ================= audio ================= */
@@ -432,7 +528,7 @@ resize();
 let L = null, levelIdx = 0, state = 'menu', lives = 3, coinsGot = 0, time = 0, lostLife = false, cp = null, endT = 0, overlayShown = false, gameT = 0;
 let camX = 0, menuT = 0;
 let fireN = 0, shieldN = 0, shieldLive = false;
-const P = { air: 1, flip: 0, shield: 0, face: 1, x: 0, y: 0, vx: 0, vy: 0, ground: false, coyote: 0, buf: 0, rot: 0, sq: 1, inv: 0, knock: 0, spr: 0, plat: null, hidden: false };
+const P = { boost: 0, air: 1, flip: 0, shield: 0, face: 1, x: 0, y: 0, vx: 0, vy: 0, ground: false, coyote: 0, buf: 0, rot: 0, sq: 1, inv: 0, knock: 0, spr: 0, plat: null, hidden: false };
 const input = { l: false, r: false, j: false, jp: false, f: false };
 let ballColor = '#ffb627', ballDark = '#b9741a', ballPat = 'dunga';
 function shade(hex, f) { const n = parseInt(hex.slice(1), 16); const r = Math.round(((n >> 16) & 255) * f), g = Math.round(((n >> 8) & 255) * f), b = Math.round((n & 255) * f); return `rgb(${r},${g},${b})`; }
@@ -466,7 +562,19 @@ function drawFx() {
   for (const g of TEXTS) { if (!g.a) continue; ctx.globalAlpha = Math.min(1, g.life * 2); ctx.font = `800 ${g.big ? 18 : 13}px "Baloo 2", Nunito, sans-serif`; ctx.strokeText(g.s, g.x, g.y); ctx.fillStyle = g.c; ctx.fillText(g.s, g.x, g.y); }
   ctx.globalAlpha = 1; ctx.textAlign = 'left';
 }
+function breakCrate(c, r) {
+  if (tileAt(L, c, r) !== 4) return;
+  L.tiles[r * L.W + c] = 0;
+  const ci = Math.floor(c / CHUNK_COLS); chunkCache.delete(ci); chunkCache.delete(ci - 1);
+  const x = c * T + 16, y = r * T + 16;
+  burst(x, y, 16, '#c98b4f', 220, 1); burst(x, y, 6, '#8a5a2b', 160, 1); ring(x, y, 30, '#ffd36b');
+  shake = Math.max(shake, 3); sfx.hit();
+  for (let k = 0; k < 2; k++) L.coins.push({ x: x - 8 + k * 16, y: y - 4, got: false });
+  popText(x, y - 20, 'Ladă spartă!', '#ffd36b', 0);
+}
+function hitTile(x, y) { breakCrate(Math.floor(x / T), Math.floor(y / T)); }
 function explode(x, y) {
+  { const c0 = Math.floor(x / T), r0 = Math.floor(y / T); for (let r = r0 - 2; r <= r0 + 2; r++) for (let c = c0 - 2; c <= c0 + 2; c++) breakCrate(c, r); }
   ring(x, y, 70, '#ffb627'); ring(x, y, 45, '#ff5d1a');
   burst(x, y, 26, '#ff8a2a', 300, 0.6); burst(x, y, 10, '#fff2c4', 200, 0.3);
   shake = Math.max(shake, 9); sfx.boom();
@@ -501,13 +609,13 @@ function shoot(x, y, vx, vy, own) { for (const q of SHOTS) if (!q.a) { q.a = tru
 function damage(e, n) {
   e.hp = (e.hp || 1) - n; e.hit = 0.25;
   if (e.hp <= 0) {
-    e.alive = false; e.die = 0.4; sfx.stomp(); kills++;
+    e.alive = false; e.die = 0.4; sfx.stomp(); kills++; mission('kills', 1); if (e.type === 2) mission('dragons', 1);
     const big = e.type === 2;
     burst(e.x, e.y, big ? 40 : 18, big ? '#ff8a2a' : e.type ? '#9b7bff' : '#ff7aa0', big ? 360 : 240, 1);
     burst(e.x, e.y, big ? 14 : 6, '#fff2c4', 200, 0.4);
     ring(e.x, e.y, big ? 80 : 40, big ? '#ffb627' : '#ffffff');
     shake = Math.max(shake, big ? 12 : 4); if (big) sfx.boom();
-    combo = (gameT - lastKill < 1.6) ? combo + 1 : 1; lastKill = gameT;
+    combo = (gameT - lastKill < 1.6) ? combo + 1 : 1; lastKill = gameT; if (combo > 1) mission('combo', combo);
     popText(e.x, e.y - 24, combo > 1 ? 'COMBO x' + combo : (big ? 'DRAGON DOBORÂT!' : '+1'), combo > 1 ? '#ffb627' : '#ffffff', combo > 1 || big ? 1 : 0);
   } else { sfx.hit(); burst(e.x, e.y, 8, '#ffd36b', 160, 0.5); popText(e.x, e.y - 24, '-' + n, '#ffd36b', 0); }
 }
@@ -522,7 +630,7 @@ function updateShots(dt) {
     if (q.own === 3 && Math.random() < 0.6) burst(q.x, q.y, 1, 'rgba(210,210,230,.7)', 40, -0.15);
     q.x += q.vx * dt; q.y += q.vy * dt;
     if (q.t > (q.own === 2 ? 1.1 : 3) || (q.y > 0 && solid(L, Math.floor(q.x / T), Math.floor(q.y / T)))) {
-      q.a = false; if (q.own === 3) explode(q.x, q.y); else burst(q.x, q.y, 6, q.own === 0 ? '#ff8a2a' : q.own === 1 ? '#9be3ff' : q.c, 120, 0.3); continue;
+      q.a = false; if (q.own !== 0 && q.own !== 3) hitTile(q.x, q.y); if (q.own === 3) explode(q.x, q.y); else burst(q.x, q.y, 6, q.own === 0 ? '#ff8a2a' : q.own === 1 ? '#9be3ff' : q.c, 120, 0.3); continue;
     }
     if (q.own === 0) {
       if (state === 'play' && !P.hidden && Math.abs(q.x - P.x) < H + 7 && Math.abs(q.y - P.y) < H + 7) {
@@ -545,7 +653,7 @@ function useFire() {
 }
 function useShield() {
   if (state !== 'play' || shieldN <= 0 || P.shield > 0) return;
-  shieldN--; P.shield = 5; hudSkills(); sfx.shield();
+  shieldN--; P.shield = 5 + 2 * up('shield'); hudSkills(); sfx.shield();
 }
 function hudSkills() {
   $('cF').textContent = fireN; $('cS').textContent = shieldN;
@@ -559,20 +667,122 @@ let hudSec = -1;
 function hudLives() { let h = ''; const m = Math.max(3, lives); for (let k = 0; k < m; k++) h += k < lives ? '♥' : '<span class="e">♥</span>'; $('hearts').innerHTML = h; }
 function hudCoins() { $('coins').textContent = coinsGot + '/' + L.totalCoins; }
 function fmtTime(t) { const sec = Math.floor(t); return Math.floor(sec / 60) + ':' + String(sec % 60).padStart(2, '0'); }
-function hudTime() { const sec = Math.floor(time); if (sec !== hudSec) { hudSec = sec; $('timer').textContent = fmtTime(time); } }
+function hudTime() { if (mode === 'endless') { const m = Math.floor(distM); if (m !== hudSec) { hudSec = m; $('timer').textContent = m + ' m'; } return; } const sec = Math.floor(time); if (sec !== hudSec) { hudSec = sec; $('timer').textContent = fmtTime(time); } }
 function vib(ms) { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} }
 
+/* ================= meta: wallet, xp, shop, daily, missions ================= */
+const SKINS = [
+  { id: 'lava', n: 'Lavă', c: '#ff5a1f', p: 'fulger', price: 150 },
+  { id: 'gheata', n: 'Gheață', c: '#9be8ff', p: 'stea', price: 150 },
+  { id: 'noapte', n: 'Noapte', c: '#5a4ccf', p: 'puncte', price: 250 },
+  { id: 'toxic', n: 'Toxic', c: '#8cff3a', p: 'fulger', price: 300 },
+  { id: 'aur', n: 'Aur curat', c: '#ffd24a', p: 'stea', price: 500 }
+];
+const UPS = [
+  { id: 'lives', n: 'Viață în plus la start', prices: [200, 500] },
+  { id: 'skill', n: '+1 minge de foc la start', prices: [100, 200, 300] },
+  { id: 'shield', n: 'Scut cu 2 secunde mai lung', prices: [150, 350] },
+  { id: 'ammo', n: 'Muniție +50%', prices: [250] },
+  { id: 'gun', n: 'Începi cu Blaster', prices: [300] }
+];
+const up = id => save.up[id] || 0;
+const DAILY = [30, 40, 50, 60, 80, 100, 200];
+const MISSION_POOL = [
+  { t: 'kills', g: 15, d: 'Doboară 15 inamici' }, { t: 'coins', g: 60, d: 'Adună 60 de monede' },
+  { t: 'levels', g: 2, d: 'Termină 2 niveluri' }, { t: 'dragons', g: 2, d: 'Doboară 2 dragoni' },
+  { t: 'combo', g: 4, d: 'Fă un combo x4', max: true }, { t: 'endless', g: 150, d: 'Ajungi la 150 m în Fără sfârșit', max: true },
+  { t: 'kills', g: 30, d: 'Doboară 30 de inamici' }, { t: 'stars', g: 3, d: 'Ia 3 stele într-un nivel', max: true }
+];
+function dayStr(off) { const d = new Date(Date.now() - (off || 0) * 86400000); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function xpInfo() { let lvl = 1, need = 100, x = save.xp; while (x >= need) { x -= need; lvl++; need = 100 + 50 * (lvl - 1); } return { lvl, x, need }; }
+let toastQ = [], toastT = null;
+function toast(msg) { toastQ.push(msg); if (!toastT) nextToast(); }
+function nextToast() { const m = toastQ.shift(); const el = $('toast'); if (!m) { el.hidden = true; toastT = null; return; } el.textContent = m; el.hidden = false; toastT = setTimeout(nextToast, 2200); }
+function addXp(n) {
+  const before = xpInfo().lvl; save.xp += n; const after = xpInfo().lvl;
+  if (after > before) { save.wallet += 50 * (after - before); toast('Nivel de jucător ' + after + '! +' + 50 * (after - before) + ' monede'); sfx.win(); }
+}
+function ensureMissions() {
+  const today = dayStr();
+  if (save.missions.day === today) return;
+  const r = mulberry32(parseInt(today.replace(/-/g, ''), 10)); const pool = MISSION_POOL.slice(), list = [];
+  while (list.length < 3) { const m = pool.splice(Math.floor(r() * pool.length), 1)[0]; if (!list.some(x => x.t === m.t)) list.push({ t: m.t, g: m.g, d: m.d, max: !!m.max, p: 0, done: false }); }
+  save.missions = { day: today, list }; persist();
+}
+function mission(t, n) {
+  if (!save.missions || save.missions.day !== dayStr()) return;
+  for (const m of save.missions.list) {
+    if (m.t !== t || m.done) continue;
+    m.p = m.max ? Math.max(m.p, n) : m.p + n;
+    if (m.p >= m.g) { m.p = m.g; m.done = true; save.wallet += 60; addXp(30); toast('Misiune îndeplinită: ' + m.d + ' (+60 monede)'); }
+  }
+}
+function dailyState() {
+  const d = save.daily, today = dayStr();
+  if (d.day === today) return { claimed: true, streak: d.streak };
+  const streak = d.day === dayStr(1) ? d.streak + 1 : 1;
+  return { claimed: false, streak };
+}
+function openDaily() {
+  const st = dailyState(), idx = (st.streak - 1) % 7;
+  $('dl-title').textContent = 'Recompensa zilnică · ziua ' + st.streak;
+  $('dl-days').innerHTML = DAILY.map((v, k) => `<div class="${k < idx ? 'got' : k === idx ? 'now' : ''}">Ziua ${k + 1}<b>${v}</b></div>`).join('');
+  $('dl-amt').textContent = '+' + DAILY[idx];
+  show('s-daily');
+}
+function claimDaily() {
+  const st = dailyState(); if (st.claimed) return goMenu();
+  const amt = DAILY[(st.streak - 1) % 7];
+  save.daily = { day: dayStr(), streak: st.streak }; save.wallet += amt; addXp(10); persist(); sfx.coin();
+  toast('+' + amt + ' monede. Revino mâine pentru ziua ' + (st.streak + 1) + '!');
+  goMenu();
+}
+function openShop() {
+  $('sh-wallet').textContent = save.wallet;
+  const eq = save.profile ? save.profile.color + save.profile.pattern : '';
+  $('sh-skins').innerHTML = SKINS.map(k => {
+    const own = save.skins.includes(k.id), on = eq === k.c + k.p;
+    const b = !own ? `<button class="btn" data-act="buy-skin" data-id="${k.id}" ${save.wallet < k.price ? 'disabled' : ''}>${k.price}</button>`
+      : `<button class="btn ${on ? 'owned' : 'ghost'}" data-act="equip-skin" data-id="${k.id}">${on ? 'Echipat' : 'Echipează'}</button>`;
+    return `<div class="item"><span class="sw2" style="background:${k.c}"></span><span class="nm">${k.n}</span><span class="sub">Model: ${k.p}</span>${b}</div>`;
+  }).join('');
+  $('sh-ups').innerHTML = UPS.map(u => {
+    const lv = up(u.id), max = u.prices.length, price = u.prices[lv];
+    const b = lv >= max ? `<button class="btn owned" disabled style="opacity:1">Maxim</button>` : `<button class="btn" data-act="buy-up" data-id="${u.id}" ${save.wallet < price ? 'disabled' : ''}>${price}</button>`;
+    return `<div class="item"><span class="nm">${u.n}</span><span class="sub">Nivel ${lv}/${max}</span>${b}</div>`;
+  }).join('');
+  show('s-shop');
+}
+function openMissions() {
+  ensureMissions();
+  $('mi-list').innerHTML = save.missions.list.map(m => `<div class="mi${m.done ? ' done' : ''}"><div class="top"><span>${m.d}</span><span>${m.done ? 'Gata' : '+60'}</span></div><div class="xp"><div class="bar"><i style="width:${Math.round(m.p / m.g * 100)}%"></i></div><span class="sub" style="font-size:12px;color:var(--muted);font-weight:800">${m.p}/${m.g}</span></div></div>`).join('');
+  show('s-missions');
+}
+let mode = 'levels', distM = 0, lastEarned = 0;
+function rewardRun(won) {
+  let earned = 0;
+  if (mode === 'endless') earned = coinsGot + kills * 2 + Math.floor(distM / 10);
+  else earned = won ? coinsGot + kills * 2 + lastWin.stars * 10 : Math.floor(coinsGot / 2) + kills * 2;
+  lastEarned = earned; save.wallet += earned;
+  addXp(coinsGot + kills * 5 + (won ? 50 : 0) + Math.floor(distM / 5));
+  if (won && mode !== 'endless') { mission('levels', 1); mission('stars', lastWin.stars); }
+  if (mode === 'endless') mission('endless', Math.floor(distM));
+  persist();
+}
+
 /* ================= level flow ================= */
-function startLevel(i) {
-  levelIdx = i; L = buildLevel(i); chunkCache = new Map(); skyGrad = null;
-  lives = 3; coinsGot = 0; time = 0; lostLife = false; overlayShown = false; hudSec = -1;
+function startEndless() { mode = 'endless'; startLevel(9, true); }
+function startLevel(i, endless) {
+  if (!endless) mode = 'levels';
+  levelIdx = i; L = buildLevel(i, endless); chunkCache = new Map(); skyGrad = null; distM = 0;
+  lives = 3 + up('lives'); coinsGot = 0; time = 0; lostLife = false; overlayShown = false; hudSec = -1;
   cp = { x: L.start.x, y: L.start.y };
   spawnPlayer();
   camX = Math.max(0, Math.min(L.pw - viewW, P.x - viewW * 0.4));
   for (const p of PARTS) p.a = false;
-  $('lvname').textContent = (i + 1) + ' · ' + LEVEL_NAMES[i];
+  $('lvname').textContent = endless ? 'Fără sfârșit' : (i + 1) + ' · ' + LEVEL_NAMES[i];
   for (const q of SHOTS) q.a = false;
-  fireN = 2; shieldN = 1; P.shield = 0; P.air = 1; P.flip = 0; weapon = -1; ammo = 0; shotCd = 0; kills = 0; combo = 0; shake = 0; flash = 0; for (const g of RINGS) g.a = false; for (const g of TEXTS) g.a = false; hudWeapon(); shieldLive = false; $('bS').classList.remove('live');
+  fireN = 2 + up('skill'); shieldN = 1; P.shield = 0; P.air = 1; P.flip = 0; weapon = up('gun') ? 0 : -1; ammo = up('gun') ? Math.round(40 * (1 + 0.5 * up('ammo'))) : 0; shotCd = 0; kills = 0; combo = 0; shake = 0; flash = 0; for (const g of RINGS) g.a = false; for (const g of TEXTS) g.a = false; hudWeapon(); shieldLive = false; $('bS').classList.remove('live');
   hudLives(); hudCoins(); hudTime(); hudSkills();
   state = 'play'; acc = 0; lastT = performance.now();
   show(null); $('hud').hidden = false; $('pad').hidden = false;
@@ -592,28 +802,37 @@ function fell() {
   spawnPlayer(); P.inv = 1.5;
   burst(P.x, P.y, 12, '#ffffff', 200, 0.5);
 }
-function die() { state = 'dead'; endT = 0.9; P.hidden = true; burst(P.x, P.y, 30, ballColor, 360, 1); $('pad').hidden = true; resetInput(); }
+function die() { rewardRun(false); state = 'dead'; endT = 0.9; P.hidden = true; burst(P.x, P.y, 30, ballColor, 360, 1); $('pad').hidden = true; resetInput(); }
 function win() {
   state = 'won'; endT = 1.1; sfx.win(); vib(40); $('pad').hidden = true; resetInput();
   const cols = ['#ffb627', '#3ee6a8', '#ff5d73', '#4cc3ff', '#b388ff'];
   for (let k = 0; k < 5; k++) burst(L.goal.x, L.goal.y - 90, 14, cols[k], 420, 0.7);
   const stars = 1 + (coinsGot >= Math.ceil(L.totalCoins * 0.8) ? 1 : 0) + (lostLife ? 0 : 1);
+  if (mode === 'endless') { lastWin = { stars: 0, isRecord: false }; rewardRun(true); return; }
   const prev = save.levels[levelIdx] || { stars: 0, best: null };
   const isRecord = prev.best == null || time < prev.best;
   save.levels[levelIdx] = { stars: Math.max(prev.stars, stars), best: isRecord ? time : prev.best };
   save.unlocked = Math.min(NLEV - 1, Math.max(save.unlocked, levelIdx + 1));
-  persist();
   lastWin = { stars, isRecord };
+  rewardRun(true);
 }
 let lastWin = null;
 
 /* ================= update ================= */
 function updatePlats(dt) {
   for (const p of L.plats) {
+    if (p.type === 1) {
+      p.dx = 0;
+      if (p.down > 0) { p.down -= dt; continue; }
+      if (p.timer < 0 && P.plat === p) p.timer = 0.45;
+      if (p.timer >= 0) { p.timer -= dt; if (p.timer < 0) { p.down = 3; p.timer = -1; burst(p.x + 16, p.y + 6, 10, '#9a8f86', 140, 1); if (P.plat === p) P.plat = null; } }
+      continue;
+    }
     p.t += dt; const nx = p.x0 + (1 - Math.cos(p.t * Math.PI / 3.2)) / 2 * p.range;
     p.dx = nx - p.x; p.x = nx;
   }
 }
+function updateSaws(dt) { for (const z of L.saws) { z.t += dt; z.y = z.y0 + Math.sin(z.t * 1.6) * 70; } }
 function updateEnemies(dt) {
   for (const e of L.enemies) {
     if (!e.alive) { if (e.die > 0) e.die -= dt; continue; }
@@ -636,7 +855,7 @@ function updateEnemies(dt) {
       e.x += e.vx * dt;
       const dir = Math.sign(e.vx), fx = e.x + dir * e.hw, row = Math.floor(e.y / T), below = Math.floor((e.y + e.hh + 2) / T);
       const fc = Math.floor(fx / T);
-      if (solid(L, fc, row) || (tileAt(L, fc, below) !== 1 && tileAt(L, fc, below) !== 2)) { e.vx = -e.vx; e.x += e.vx * dt * 2; }
+      if (solid(L, fc, row) || (tileAt(L, fc, below) !== 1 && tileAt(L, fc, below) !== 2 && tileAt(L, fc, below) !== 4)) { e.vx = -e.vx; e.x += e.vx * dt * 2; }
     } else {
       e.x = e.x0 + Math.sin(e.t * 0.8) * 48;
       e.y = e.y0 + Math.sin(e.t * 2.2) * 40;
@@ -649,8 +868,14 @@ function updatePlayer(dt) {
   if (P.shield > 0) P.shield -= dt;
   shotCd -= dt; if (input.f && weapon >= 0 && shotCd <= 0) fireWeapon();
   if (P.knock > 0) P.knock -= dt;
-  else if (dir) { P.vx += dir * (P.ground ? 2400 : 1500) * dt; if (Math.abs(P.vx) > MAXV) P.vx = Math.sign(P.vx) * MAXV; }
-  else { const f = (P.ground ? 1800 : 420) * dt; P.vx = Math.abs(P.vx) <= f ? 0 : P.vx - Math.sign(P.vx) * f; }
+  else if (dir) {
+    const turning = P.vx * dir < 0, prevAbs = Math.abs(P.vx);
+    P.vx += dir * (turning ? 3400 : P.ground ? 1900 : 1300) * dt;
+    const mv = P.boost > 0 ? 640 : MAXV;
+    if (Math.abs(P.vx) > mv) P.vx = Math.sign(P.vx) * Math.max(mv, prevAbs - 900 * dt);
+  }
+  else { const f = (P.boost > 0 ? 0 : P.ground ? 260 : 120) * dt; P.vx = Math.abs(P.vx) <= f ? 0 : P.vx - Math.sign(P.vx) * f; }
+  if (P.boost > 0) { P.boost -= dt; if (Math.random() < 0.5) burst(P.x - Math.sign(P.vx) * 10, P.y + 6, 1, '#7df9ff', 40, 0); }
   if (input.jp) { P.buf = 0.12; input.jp = false; }
   if (P.ground) P.coyote = 0.1; else P.coyote -= dt;
   if (P.buf > 0 && P.coyote > 0) { P.vy = -JUMP; P.buf = 0; P.coyote = 0; P.ground = false; P.plat = null; P.spr = 0; sfx.jump(); }
@@ -681,11 +906,12 @@ function updatePlayer(dt) {
     const r = Math.floor((P.y + H) / T), top = r * T;
     for (let c = c0; c <= c1; c++) { const t = tileAt(L, c, r); if (solid(L, c, r) && r >= 0 && r < ROWS || (t === 2 && prevB <= top + 0.5)) { P.y = top - H; P.vy = 0; P.ground = true; break; } }
     if (!P.ground) for (const p of L.plats) {
+      if (p.down > 0) continue;
       if (P.x + H > p.x && P.x - H < p.x + p.w && prevB <= p.y + 0.5 && P.y + H >= p.y) { P.y = p.y - H; P.vy = 0; P.ground = true; P.plat = p; break; }
     }
   } else {
     const r = Math.floor((P.y - H) / T);
-    for (let c = c0; c <= c1; c++) if (solid(L, c, r) && r >= 0) { P.y = (r + 1) * T + H; P.vy = 0; break; }
+    for (let c = c0; c <= c1; c++) if (solid(L, c, r) && r >= 0) { P.y = (r + 1) * T + H; P.vy = 0; if (tileAt(L, c, r) === 4) breakCrate(c, r); break; }
   }
   if (P.ground) P.air = 1;
   if (P.ground && !wasGround && impact > 380) { P.sq = 0.72; burst(P.x, P.y + H, 5, 'rgba(255,255,255,.7)', 90, 0.4); }
@@ -701,14 +927,21 @@ function interactions() {
     const hx = c * T + 5, hy = r * T + T * 0.48;
     if (P.x + H > hx && P.x - H < hx + T - 10 && P.y + H > hy) { hurt(c * T + T / 2); return; }
   }
-  for (const k of L.coins) if (!k.got && Math.abs(k.x - P.x) < 20 && Math.abs(k.y - P.y) < 20) { k.got = true; coinsGot++; hudCoins(); sfx.coin(); burst(k.x, k.y, 6, '#ffd36b', 140, 0.3); }
-  for (const k of L.hearts) if (!k.got && Math.abs(k.x - P.x) < 22 && Math.abs(k.y - P.y) < 22) { k.got = true; lives = Math.min(5, lives + 1); hudLives(); sfx.heart(); burst(k.x, k.y, 10, '#ff5d73', 160, 0.3); }
+  for (const k of L.coins) if (!k.got && Math.abs(k.x - P.x) < 20 && Math.abs(k.y - P.y) < 20) { k.got = true; coinsGot++; hudCoins(); mission('coins', 1); sfx.coin(); burst(k.x, k.y, 6, '#ffd36b', 140, 0.3); }
+  for (const k of L.hearts) if (!k.got && Math.abs(k.x - P.x) < 22 && Math.abs(k.y - P.y) < 22) { k.got = true; lives = Math.min(5 + up('lives'), lives + 1); hudLives(); sfx.heart(); burst(k.x, k.y, 10, '#ff5d73', 160, 0.3); }
   for (const k of L.orbs) if (!k.got && Math.abs(k.x - P.x) < 22 && Math.abs(k.y - P.y) < 22) {
     k.got = true; if (k.kind === 0) fireN += 2; else shieldN += 1; hudSkills(); sfx.orb();
     burst(k.x, k.y, 12, k.kind === 0 ? '#ff8a2a' : '#4cc3ff', 170, 0.3);
   }
+  for (const b of L.boosts) if (P.ground && Math.abs(b.x - P.x) < 18 && Math.abs(b.y - (P.y + H)) < 4 && P.boost <= 0.6) {
+    P.boost = 1.1; P.vx = 620; P.vy = -560; P.spr = 0.4; P.ground = false; P.plat = null; P.air = 1; sfx.spring(); ring(b.x, b.y - 6, 30, '#7df9ff'); burst(b.x, b.y - 4, 10, '#7df9ff', 200, 0.2); popText(b.x, b.y - 30, 'TURBO!', '#7df9ff', 1); shake = Math.max(shake, 2);
+  }
+  for (const z of L.saws) if (Math.hypot(z.x - P.x, z.y - P.y) < 14 + H - 2) { if (P.shield > 0) burst(z.x, z.y, 4, '#4cc3ff', 120, 0.3); else hurt(z.x); }
+  for (const g of L.gems) if (!g.got && Math.abs(g.x - P.x) < 22 && Math.abs(g.y - P.y) < 22) {
+    g.got = true; coinsGot += 5; hudCoins(); mission('coins', 5); sfx.heart(); ring(g.x, g.y, 44, '#b388ff'); burst(g.x, g.y, 20, '#d9c4ff', 220, 0.3); popText(g.x, g.y - 24, 'COMOARĂ SECRETĂ +5', '#d9c4ff', 1);
+  }
   for (const k of L.weapons) if (!k.got && Math.abs(k.x - P.x) < 22 && Math.abs(k.y - P.y) < 22) {
-    k.got = true; if (weapon === k.kind) ammo += WEAPONS[k.kind].ammo; else { weapon = k.kind; ammo = WEAPONS[k.kind].ammo; }
+    k.got = true; if (weapon === k.kind) ammo += Math.round(WEAPONS[k.kind].ammo * (1 + 0.5 * up('ammo'))); else { weapon = k.kind; ammo = Math.round(WEAPONS[k.kind].ammo * (1 + 0.5 * up('ammo'))); }
     hudWeapon(); sfx.pick(); ring(k.x, k.y, 36, WEAPONS[k.kind].col); burst(k.x, k.y, 12, WEAPONS[k.kind].col, 180, 0.3);
     popText(k.x, k.y - 22, WEAPONS[k.kind].n + '!', WEAPONS[k.kind].col, 1);
   }
@@ -732,13 +965,14 @@ function updateCamera(dt) {
 }
 function step(dt) {
   gameT += dt;
-  updatePlats(dt); updateEnemies(dt); updateShots(dt); updateParticles(dt); updateFx(dt);
+  updatePlats(dt); updateEnemies(dt); updateSaws(dt); updateShots(dt); updateParticles(dt); updateFx(dt);
   if (state !== 'play') {
     endT -= dt;
-    if (endT <= 0 && !overlayShown) { overlayShown = true; if (state === 'dead') show('s-over'); else showWin(); }
+    if (endT <= 0 && !overlayShown) { overlayShown = true; if (mode === 'endless') showEndless(); else if (state === 'dead') { $('ov-txt').textContent = 'Ai păstrat ' + lastEarned + ' monede din tura asta. Nivelul o ia de la capăt.'; show('s-over'); } else showWin(); }
     return;
   }
   time += dt; hudTime();
+  if (mode === 'endless') { const dm = (P.x - L.start.x) / T; if (dm > distM) distM = dm; }
   updatePlayer(dt);
   if (state === 'play') interactions();
   const live = P.shield > 0; if (live !== shieldLive) { shieldLive = live; $('bS').classList.toggle('live', live); hudSkills(); }
@@ -776,6 +1010,10 @@ function getChunk(ci) {
       g.fillStyle = th.plankDark; g.fillRect(x + 4, y + 4, 3, 3); g.fillRect(x + T - 7, y + 4, 3, 3);
       if (tileAt(L, c - 1, r) !== 2) g.fillRect(x, y, 2, 16);
       if (tileAt(L, c + 1, r) !== 2) g.fillRect(x + T - 2, y, 2, 16);
+    } else if (t === 4) {
+      g.fillStyle = '#8a5a2b'; g.fillRect(x + 1, y + 1, T - 2, T - 2);
+      g.fillStyle = '#c98b4f'; g.fillRect(x + 4, y + 4, T - 8, T - 8);
+      g.strokeStyle = '#8a5a2b'; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 5, y + 5); g.lineTo(x + T - 5, y + T - 5); g.moveTo(x + T - 5, y + 5); g.lineTo(x + 5, y + T - 5); g.stroke();
     } else if (t === 3) {
       g.fillStyle = th.spike; g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 1.5;
       g.beginPath();
@@ -826,6 +1064,8 @@ function drawBall(g, x, y, r, rot, color, dark, pat, sx, sy) {
   g.save(); g.clip(); g.rotate(rot); g.fillStyle = dark;
   if (pat === 'dunga') g.fillRect(-r, -r * 0.26, r * 2, r * 0.52);
   else if (pat === 'puncte') { for (const [a, b] of [[-0.45, -0.4], [0.5, -0.1], [-0.1, 0.5], [0.15, -0.75]]) { g.beginPath(); g.arc(a * r, b * r, r * 0.2, 0, 6.283); g.fill(); } }
+  else if (pat === 'stea') { g.beginPath(); for (let k = 0; k < 10; k++) { const a = k * Math.PI / 5 - Math.PI / 2, rr = k % 2 ? r * 0.28 : r * 0.68; g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } g.closePath(); g.fill(); }
+  else if (pat === 'fulger') { g.beginPath(); g.moveTo(-r * 0.2, -r); g.lineTo(r * 0.35, -r * 0.1); g.lineTo(0, -r * 0.05); g.lineTo(r * 0.25, r); g.lineTo(-r * 0.35, r * 0.05); g.lineTo(0, 0); g.closePath(); g.fill(); }
   else { g.beginPath(); g.arc(r * 0.45, 0, r * 0.16, 0, 6.283); g.fill(); }
   g.restore();
   g.fillStyle = 'rgba(255,255,255,.45)'; g.beginPath(); g.ellipse(-r * 0.35, -r * 0.4, r * 0.32, r * 0.2, -0.6, 0, 6.283); g.fill();
@@ -836,6 +1076,7 @@ function drawEntities(x0, x1) {
   const tt = gameT;
   for (const p of L.plats) {
     if (p.x + p.w < x0 || p.x > x1) continue;
+    if (p.type === 1) { drawCrumble(p); continue; }
     ctx.fillStyle = '#4b5574'; ctx.fillRect(p.x, p.y + 4, p.w, 10);
     ctx.fillStyle = '#9aa6c9'; ctx.fillRect(p.x, p.y, p.w, 8);
     ctx.fillStyle = '#ffb627'; for (let k = 0; k < 3; k++) ctx.fillRect(p.x + 10 + k * 32, p.y + 2, 12, 4);
@@ -949,6 +1190,38 @@ function drawShots() {
     }
   }
 }
+function drawCrumble(p) {
+  if (p.down > 0) { if (p.down > 2.4) { ctx.globalAlpha = (p.down - 2.4) / 0.6; ctx.fillStyle = '#9a8f86'; ctx.fillRect(p.x, p.y + (3 - p.down) * 220, 32, 12); ctx.globalAlpha = 1; } return; }
+  const sh = p.timer >= 0 ? (Math.random() - 0.5) * 3 : 0;
+  ctx.fillStyle = '#6f655e'; ctx.fillRect(p.x + sh, p.y + 4, 32, 10);
+  ctx.fillStyle = p.timer >= 0 ? '#c9a68f' : '#b3a79d'; ctx.fillRect(p.x + sh, p.y, 32, 9);
+  ctx.fillStyle = '#6f655e'; ctx.fillRect(p.x + 9 + sh, p.y + 2, 2, 7); ctx.fillRect(p.x + 21 + sh, p.y + 1, 2, 6);
+}
+function drawInteractive(x0, x1) {
+  for (const b of L.boosts) {
+    if (b.x < x0 - 30 || b.x > x1 + 30) continue;
+    ctx.fillStyle = '#2a335c'; ctx.fillRect(b.x - 16, b.y - 5, 32, 5);
+    const ph = (gameT * 3) % 1;
+    for (let k = 0; k < 3; k++) { ctx.globalAlpha = 0.4 + 0.6 * (((k / 3) + ph) % 1); ctx.fillStyle = '#7df9ff'; ctx.beginPath(); ctx.moveTo(b.x - 12 + k * 9, b.y - 12); ctx.lineTo(b.x - 5 + k * 9, b.y - 8); ctx.lineTo(b.x - 12 + k * 9, b.y - 4); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+  for (const z of L.saws) {
+    if (z.x < x0 - 30 || z.x > x1 + 30) continue;
+    ctx.strokeStyle = 'rgba(200,205,225,.5)'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(z.x, z.y0 - 84); ctx.lineTo(z.x, z.y0 + 84); ctx.stroke();
+    ctx.save(); ctx.translate(z.x, z.y); ctx.rotate(gameT * 12);
+    ctx.fillStyle = '#d8dcef'; ctx.beginPath();
+    for (let k = 0; k < 16; k++) { const a = k * Math.PI / 8, rr = k % 2 ? 11 : 16; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+    ctx.closePath(); ctx.fill(); ctx.fillStyle = '#ff5d73'; ctx.beginPath(); ctx.arc(0, 0, 4, 0, 6.283); ctx.fill();
+    ctx.restore();
+  }
+  for (const g of L.gems) {
+    if (g.got || g.x < x0 - 30 || g.x > x1 + 30) continue;
+    const y = g.y + Math.sin(gameT * 2.5) * 4;
+    ctx.fillStyle = 'rgba(179,136,255,.25)'; ctx.beginPath(); ctx.arc(g.x, y, 18 + Math.sin(gameT * 6) * 3, 0, 6.283); ctx.fill();
+    ctx.fillStyle = '#b388ff'; ctx.beginPath(); ctx.moveTo(g.x, y - 12); ctx.lineTo(g.x + 10, y - 3); ctx.lineTo(g.x, y + 12); ctx.lineTo(g.x - 10, y - 3); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = '#efe6ff'; ctx.beginPath(); ctx.moveTo(g.x, y - 12); ctx.lineTo(g.x + 4, y - 3); ctx.lineTo(g.x, y + 4); ctx.lineTo(g.x - 4, y - 3); ctx.closePath(); ctx.fill();
+  }
+}
 function drawWeaponsPk(x0, x1) {
   for (const k of L.weapons) {
     if (k.got || k.x < x0 - 20 || k.x > x1 + 20) continue;
@@ -988,6 +1261,7 @@ function render() {
   drawEntities(camX, camX + viewW);
   drawOrbs(camX, camX + viewW);
   drawWeaponsPk(camX, camX + viewW);
+  drawInteractive(camX, camX + viewW);
   if (state !== 'menu' && !P.hidden && !(P.inv > 0 && Math.floor(P.inv * 10) % 2 === 0)) {
     drawBall(ctx, P.x, P.y, 12, P.rot, ballColor, ballDark, ballPat, 2 - P.sq, P.sq);
   }
@@ -1028,7 +1302,7 @@ function frame(now) {
     while (acc >= STEP && n < 12) { step(STEP); acc -= STEP; n++; }
     if (n >= 12) acc = 0;
   } else if (state === 'menu') {
-    menuT += dt; gameT += dt; updatePlats(dt); updateEnemies(dt);
+    menuT += dt; gameT += dt; updatePlats(dt); updateEnemies(dt); updateSaws(dt);
     const span = Math.max(1, L.pw - viewW);
     camX = (1 - Math.cos(menuT * 0.06)) / 2 * span;
   }
@@ -1044,6 +1318,12 @@ function goMenu() {
   state = 'menu'; L = menuLevel; chunkCache = new Map(); skyGrad = null; menuT = 0;
   $('hud').hidden = true; $('pad').hidden = true; resetInput();
   if (!save.profile) return openProfile();
+  ensureMissions();
+  if (!dailyState().claimed) return openDaily();
+  const xi = xpInfo(); $('m-lvl').textContent = 'Nivel ' + xi.lvl; $('m-xp').style.width = Math.round(xi.x / xi.need * 100) + '%';
+  $('m-wallet').textContent = save.wallet; $('m-streak').textContent = save.daily.streak;
+  const md = save.missions.list.filter(m => m.done).length; $('m-mis').textContent = 'Misiuni ' + md + '/3';
+  $('m-endless').textContent = 'Fără sfârșit' + (save.endlessBest ? ' · record ' + save.endlessBest + ' m' : '');
   const st = Object.values(save.levels).reduce((a, l) => a + (l.stars || 0), 0);
   $('m-stars').textContent = st;
   $('m-done').textContent = Object.keys(save.levels).length;
@@ -1104,9 +1384,18 @@ function showWin() {
   for (let k = 0; k < 3; k++) { sp[k].classList.remove('on'); setTimeout(() => k < lastWin.stars && sp[k].classList.add('on'), 150 + k * 220); }
   const c2 = coinsGot >= Math.ceil(L.totalCoins * 0.8);
   $('w-why').innerHTML = `<span class="ok">★ Ai ajuns la steag</span><span class="${c2 ? 'ok' : ''}">★ Monede: ${coinsGot}/${L.totalCoins} (ai nevoie de ${Math.ceil(L.totalCoins * 0.8)})</span><span class="${!lostLife ? 'ok' : ''}">★ ${lostLife ? 'Ai pierdut cel puțin o viață' : 'Nicio viață pierdută'}</span>`;
-  $('w-stats').innerHTML = `<span class="chip">Timp <b>${fmtTime(time)}</b></span><span class="chip">Inamici doborâți <b>${kills}</b></span>${lastWin.isRecord ? '<span class="chip"><b>Record nou</b></span>' : ''}`;
+  $('w-stats').innerHTML = `<span class="chip">Timp <b>${fmtTime(time)}</b></span><span class="chip">Inamici doborâți <b>${kills}</b></span><span class="chip wallet"><b>+${lastEarned}</b></span>${lastWin.isRecord ? '<span class="chip"><b>Record nou</b></span>' : ''}`;
   $('w-next').hidden = last;
   show('s-win');
+}
+function showEndless() {
+  const d = Math.floor(distM), rec = d > save.endlessBest;
+  if (rec) { save.endlessBest = d; persist(); }
+  $('er-title').textContent = state === 'won' ? 'Ai ajuns la capăt!' : rec ? 'Record nou!' : 'Tură terminată';
+  $('er-dist').textContent = d + ' m';
+  $('er-rec').textContent = rec ? 'Ai bătut recordul tău.' : 'Recordul tău: ' + save.endlessBest + ' m. Mai ai ' + Math.max(0, save.endlessBest - d) + ' m până la el.';
+  $('er-stats').innerHTML = `<span class="chip">Inamici <b>${kills}</b></span><span class="chip">Monede <b>${coinsGot}</b></span><span class="chip wallet"><b>+${lastEarned}</b></span>`;
+  show('s-endres');
 }
 function pause() { if (state !== 'play') return; state = 'paused'; $('pad').hidden = true; resetInput(); show('s-pause'); }
 function resume() { if (state !== 'paused') return; state = 'play'; lastT = performance.now(); acc = 0; $('pad').hidden = false; show(null); }
@@ -1130,7 +1419,14 @@ document.addEventListener('click', e => {
       break;
     }
     case 'resume': resume(); break;
-    case 'restart': startLevel(levelIdx); break;
+    case 'restart': if (mode === 'endless') startEndless(); else startLevel(levelIdx); break;
+    case 'endless': startEndless(); break;
+    case 'shop': openShop(); break;
+    case 'missions': openMissions(); break;
+    case 'claim': claimDaily(); break;
+    case 'buy-skin': { const k = SKINS.find(x => x.id === b.dataset.id); if (k && save.wallet >= k.price && !save.skins.includes(k.id)) { save.wallet -= k.price; save.skins.push(k.id); save.profile.color = k.c; save.profile.pattern = k.p; applyProfileLook(save.profile); persist(); sfx.pick(); toast('Ai cumpărat skinul ' + k.n + '!'); } openShop(); break; }
+    case 'equip-skin': { const k = SKINS.find(x => x.id === b.dataset.id); if (k) { save.profile.color = k.c; save.profile.pattern = k.p; applyProfileLook(save.profile); persist(); } openShop(); break; }
+    case 'buy-up': { const u = UPS.find(x => x.id === b.dataset.id); const lv = up(u.id), price = u.prices[lv]; if (price != null && save.wallet >= price) { save.wallet -= price; save.up[u.id] = lv + 1; persist(); sfx.pick(); toast(u.n + ' · nivel ' + (lv + 1)); } openShop(); break; }
     case 'next': startLevel(Math.min(NLEV - 1, levelIdx + 1)); break;
     case 'toggle-sound': save.settings.sound = !save.settings.sound; persist(); if (save.settings.sound) audioInit(); openSettings(); break;
     case 'toggle-fps': save.settings.fps = !save.settings.fps; persist(); openSettings(); break;
@@ -1170,7 +1466,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) pause
 window.addEventListener('blur', () => { if (state === 'play') resetInput(); });
 document.addEventListener('contextmenu', e => { if (e.target === cv) e.preventDefault(); });
 
-window.__rg = { P, input, get state() { return state; }, get L() { return L; }, get lives() { return lives; }, startLevel, buildLevel, useFire, useShield, SHOTS, get fireN() { return fireN; }, get weapon() { return weapon; }, get kills() { return kills; }, giveWeapon(k) { weapon = k; ammo = WEAPONS[k].ammo; hudWeapon(); }, get fps() { return fpsShown; } };
+window.__rg = { P, input, get state() { return state; }, get L() { return L; }, get lives() { return lives; }, startLevel, buildLevel, useFire, useShield, SHOTS, get fireN() { return fireN; }, get save() { return save; }, startEndless, get distM() { return distM; }, get weapon() { return weapon; }, get kills() { return kills; }, giveWeapon(k) { weapon = k; ammo = WEAPONS[k].ammo; hudWeapon(); }, get fps() { return fpsShown; } };
 
 goMenu();
 requestAnimationFrame(frame);
