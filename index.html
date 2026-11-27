@@ -167,6 +167,7 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
     <div class="pill"><span class="coin"></span><span id="coins">0/0</span></div>
     <div class="pill" id="timer">0:00</div>
     <div class="pill" id="wpn" hidden></div>
+    <div class="pill" id="pwr" hidden></div>
     <div class="sp"></div>
     <div class="pill" id="lvname">1 · Pajiștea</div>
     <button id="pauseBtn" aria-label="Pauză">II</button>
@@ -249,6 +250,7 @@ input[type=text]{width:100%;box-sizing:border-box;background:var(--night);border
       <h2>Alege nivelul</h2>
       <p>Termină un nivel ca să-l deblochezi pe următorul. Ia toate cele 3 stele: termini, aduni 80% din monede și nu pierzi nicio viață.</p>
       <p><b>4 lumi, 20 de niveluri:</b> Pădurea, Deșertul, Gheața (bila alunecă, frânezi greu) și Vulcanul (bule de lavă sar din gropi). La fiecare al 5-lea nivel te așteaptă un boss cu bară de viață și 3 faze: poarta spre steag se deschide doar după ce îl învingi. Sari pe capul lui sau trage în el.</p>
+      <p><b>Puteri ale bilei</b> (pătratele colorate): M = Magnet (monedele vin singure la tine), + = Uriașă (strivești inamicii la atingere), − = Mică (mai rapidă, sare mai sus, greu de nimerit), L = Lipicioasă (te prinzi de pereți și sari de pe ei, nu mai aluneci pe gheață). <b>Fantoma:</b> după ce termini un nivel, data viitoare te întreci cu bila albă transparentă, care e cea mai bună tură a ta.</p>
       <p>Atenție la dragonii de sus: scuipă foc. Adună sferele portocalii (mingi de foc care țintesc singure inamicii) și pe cele albastre (scut 5 secunde care blochează focul și distruge inamicii la atingere). Ia armele care plutesc prin nivel și ține apăsat butonul cu pistol: Blaster trage repede, Triplu trage în evantai, Rachetele urmăresc ținta și explodează. Apasă săritura de două ori pentru dublu salt. Nou prin niveluri: lăzi pe care le spargi cu capul sau cu arma (au monede), pad-uri TURBO, platforme de piatră care se prăbușesc, ferăstraie care urcă și coboară și comori secrete sus, la care ajungi doar cu dublu salt.</p>
       <div class="grid" id="lv-grid"></div>
       <button class="btn ghost" data-act="menu">Înapoi</button>
@@ -446,7 +448,7 @@ function buildLevel(i, endless) {
   const rows = Array.from({ length: ROWS }, () => '');
   for (const c of seq) for (let r = 0; r < ROWS; r++) rows[r] += c.rows[r];
   const W = rows[0].length;
-  const L = { i, W, pw: W * T, tiles: new Uint8Array(W * ROWS), coins: [], hearts: [], enemies: [], springs: [], checks: [], orbs: [], weapons: [], boosts: [], saws: [], gems: [], plats: [], bubbles: [], goal: null, start: null, gate: null, arena: null, boss: null, theme: endless ? THEMES[Math.floor(rnd() * 4)] : THEMES[themeOf(i)], rnd };
+  const L = { i, W, pw: W * T, tiles: new Uint8Array(W * ROWS), coins: [], hearts: [], enemies: [], springs: [], checks: [], orbs: [], weapons: [], boosts: [], saws: [], gems: [], plats: [], powers: [], bubbles: [], goal: null, start: null, gate: null, arena: null, boss: null, theme: endless ? THEMES[Math.floor(rnd() * 4)] : THEMES[themeOf(i)], rnd };
   const ev = L.theme.ev;
   for (let r = 0; r < ROWS; r++) for (let c = 0; c < W; c++) {
     const k = rows[r][c], cx = c * T + T / 2, by = (r + 1) * T;
@@ -485,6 +487,8 @@ function buildLevel(i, endless) {
       else { if (run >= 2) L.bubbles.push({ x: (c - run / 2) * T, y: WH + 40, t: rnd() * 2.6, on: false }); run = 0; }
     }
   }
+  { const pr = endless ? rnd : mulberry32(4421 + i * 37), nC = L.coins.length, np = endless ? Math.floor(nC / 14) : 2 + (i >= 10 ? 1 : 0); const pb = Math.floor(pr() * 4);
+    for (let k = 1; k <= np; k++) { const ci = Math.floor(nC * k / (np + 1)), cc = L.coins[ci]; if (!cc || cc.pw) continue; L.coins.splice(ci, 1); L.powers.push({ x: cc.x, y: cc.y, got: false, kind: (pb + k) % 4 }); } }
   L.totalCoins = L.coins.length;
   return L;
 }
@@ -570,7 +574,7 @@ resize();
 let L = null, levelIdx = 0, state = 'menu', lives = 3, coinsGot = 0, time = 0, lostLife = false, cp = null, endT = 0, overlayShown = false, gameT = 0;
 let camX = 0, menuT = 0;
 let fireN = 0, shieldN = 0, shieldLive = false;
-const P = { boost: 0, air: 1, flip: 0, shield: 0, face: 1, x: 0, y: 0, vx: 0, vy: 0, ground: false, coyote: 0, buf: 0, rot: 0, sq: 1, inv: 0, knock: 0, spr: 0, plat: null, hidden: false };
+const P = { pw: -1, pwT: 0, rs: 1, wallT: 0, wallDir: 0, boost: 0, air: 1, flip: 0, shield: 0, face: 1, x: 0, y: 0, vx: 0, vy: 0, ground: false, coyote: 0, buf: 0, rot: 0, sq: 1, inv: 0, knock: 0, spr: 0, plat: null, hidden: false };
 const input = { l: false, r: false, j: false, jp: false, f: false };
 let ballColor = '#ffb627', ballDark = '#b9741a', ballPat = 'dunga';
 function shade(hex, f) { const n = parseInt(hex.slice(1), 16); const r = Math.round(((n >> 16) & 255) * f), g = Math.round(((n >> 8) & 255) * f), b = Math.round((n & 255) * f); return `rgb(${r},${g},${b})`; }
@@ -588,6 +592,12 @@ function burst(x, y, n, color, speed, grav) {
 }
 const SHOTS = Array.from({ length: 90 }, () => ({ a: false, x: 0, y: 0, vx: 0, vy: 0, t: 0, own: 0, tgt: null, c: '#fff' }));
 const WEAPONS = [{ n: 'Blaster', ammo: 40, cd: 0.13, col: '#7df9ff' }, { n: 'Triplu', ammo: 25, cd: 0.3, col: '#ff7ad9' }, { n: 'Rachete', ammo: 8, cd: 0.55, col: '#ffb627' }];
+const POWERS = [{ n: 'Magnet', c: '#ff5d73', g: 'M', d: 9 }, { n: 'Uriașă', c: '#3ee6a8', g: '+', d: 7 }, { n: 'Mică', c: '#b388ff', g: '−', d: 9 }, { n: 'Lipicioasă', c: '#ffb627', g: 'L', d: 10 }];
+let pwSec = -1;
+function hudPower() { const el = $('pwr'); if (P.pw < 0) { if (!el.hidden) el.hidden = true; pwSec = -1; return; } const sc = Math.ceil(P.pwT); if (sc === pwSec && !el.hidden) return; pwSec = sc; el.hidden = false; el.innerHTML = `<span style="color:${POWERS[P.pw].c}">${POWERS[P.pw].n}</span> ${sc}s`; }
+let ghost = null, ghostRec = [], ghostAcc = 0;
+function loadGhost(i) { try { const g = JSON.parse(localStorage.getItem('rostogol.g' + i)); return Array.isArray(g) && g.length > 4 ? g : null; } catch (e) { return null; } }
+function saveGhost(i, g) { try { localStorage.setItem('rostogol.g' + i, JSON.stringify(g)); } catch (e) {} }
 let weapon = -1, ammo = 0, shotCd = 0, shake = 0, flash = 0, combo = 0, lastKill = -9, kills = 0;
 const RINGS = Array.from({ length: 24 }, () => ({ a: false, x: 0, y: 0, max: 0, life: 0, c: '' }));
 function ring(x, y, max, c) { for (const g of RINGS) if (!g.a) { g.a = true; g.x = x; g.y = y; g.max = max; g.life = 0.35; g.c = c; return; } }
@@ -682,7 +692,7 @@ function updateShots(dt) {
       q.a = false; if (q.own !== 0 && q.own !== 3) hitTile(q.x, q.y); if (q.own === 3) explode(q.x, q.y); else burst(q.x, q.y, 6, q.own === 0 ? '#ff8a2a' : q.own === 1 ? '#9be3ff' : q.c, 120, 0.3); continue;
     }
     if (q.own === 0) {
-      if (state === 'play' && !P.hidden && Math.abs(q.x - P.x) < H + 7 && Math.abs(q.y - P.y) < H + 7) {
+      if (state === 'play' && !P.hidden && Math.abs(q.x - P.x) < H * P.rs + 7 && Math.abs(q.y - P.y) < H * P.rs + 7) {
         q.a = false;
         if (P.shield > 0) burst(q.x, q.y, 10, '#4cc3ff', 180, 0.3); else hurt(q.x);
       }
@@ -831,6 +841,7 @@ function startLevel(i, endless) {
   for (const p of PARTS) p.a = false;
   $('lvname').textContent = endless ? 'Fără sfârșit' : (i + 1) + ' · ' + LEVEL_NAMES[i];
   for (const q of SHOTS) q.a = false;
+  P.pw = -1; P.pwT = 0; P.rs = 1; P.wallT = 0; hudPower(); ghostRec = []; ghostAcc = 0; ghost = endless ? null : loadGhost(i);
   fireN = 2 + up('skill'); shieldN = 1; P.shield = 0; P.air = 1; P.flip = 0; weapon = up('gun') ? 0 : -1; ammo = up('gun') ? Math.round(40 * (1 + 0.5 * up('ammo'))) : 0; shotCd = 0; kills = 0; combo = 0; shake = 0; flash = 0; for (const g of RINGS) g.a = false; for (const g of TEXTS) g.a = false; hudWeapon(); shieldLive = false; $('bS').classList.remove('live');
   hudLives(); hudCoins(); hudTime(); hudSkills();
   state = 'play'; acc = 0; lastT = performance.now();
@@ -860,9 +871,11 @@ function win() {
   if (mode === 'endless') { lastWin = { stars: 0, isRecord: false }; rewardRun(true); return; }
   const prev = save.levels[levelIdx] || { stars: 0, best: null };
   const isRecord = prev.best == null || time < prev.best;
+  const hadGhost = !!ghost && prev.best != null;
+  if (isRecord || !loadGhost(levelIdx)) { ghostRec.push(Math.round(P.x), Math.round(P.y)); saveGhost(levelIdx, ghostRec); }
   save.levels[levelIdx] = { stars: Math.max(prev.stars, stars), best: isRecord ? time : prev.best };
   save.unlocked = Math.min(NLEV - 1, Math.max(save.unlocked, levelIdx + 1));
-  lastWin = { stars, isRecord };
+  lastWin = { stars, isRecord, gd: hadGhost ? prev.best - time : null };
   rewardRun(true);
 }
 let lastWin = null;
@@ -988,17 +1001,21 @@ function updatePlayer(dt) {
   if (P.knock > 0) P.knock -= dt;
   else if (dir) {
     const turning = P.vx * dir < 0, prevAbs = Math.abs(P.vx);
-    const ice = L.theme.slip && P.ground;
+    const ice = L.theme.slip && P.ground && P.pw !== 3;
     P.vx += dir * (turning ? (ice ? 1000 : 3400) : P.ground ? (ice ? 900 : 1900) : 1300) * dt;
     if (ice && turning && Math.random() < 0.5) burst(P.x, P.y + H, 1, '#ffffff', 80, 0.4);
-    const mv = P.boost > 0 ? 640 : MAXV;
+    const mv = P.boost > 0 ? 640 : P.pw === 2 ? MAXV * 1.25 : MAXV;
     if (Math.abs(P.vx) > mv) P.vx = Math.sign(P.vx) * Math.max(mv, prevAbs - 900 * dt);
   }
-  else { const f = (P.boost > 0 ? 0 : P.ground ? (L.theme.slip ? 45 : 260) : 120) * dt; P.vx = Math.abs(P.vx) <= f ? 0 : P.vx - Math.sign(P.vx) * f; }
+  else { const f = (P.boost > 0 ? 0 : P.ground ? (L.theme.slip && P.pw !== 3 ? 45 : 260) : 120) * dt; P.vx = Math.abs(P.vx) <= f ? 0 : P.vx - Math.sign(P.vx) * f; }
   if (P.boost > 0) { P.boost -= dt; if (Math.random() < 0.5) burst(P.x - Math.sign(P.vx) * 10, P.y + 6, 1, '#7df9ff', 40, 0); }
   if (input.jp) { P.buf = 0.12; input.jp = false; }
   if (P.ground) P.coyote = 0.1; else P.coyote -= dt;
-  if (P.buf > 0 && P.coyote > 0) { P.vy = -JUMP; P.buf = 0; P.coyote = 0; P.ground = false; P.plat = null; P.spr = 0; sfx.jump(); }
+  if (P.pw >= 0) { P.pwT -= dt; if (P.pwT <= 0) { P.pw = -1; popText(P.x, P.y - 30, 'Puterea s-a terminat', '#ffffff', 0); } hudPower(); }
+  P.rs += ((P.pw === 1 ? 1.6 : P.pw === 2 ? 0.6 : 1) - P.rs) * Math.min(1, dt * 8);
+  if (P.wallT > 0) P.wallT -= dt;
+  if (P.buf > 0 && P.wallT > 0 && !P.ground && P.coyote <= 0) { P.vy = -JUMP; P.vx = -P.wallDir * 330; P.knock = 0.14; P.buf = 0; P.wallT = 0; P.spr = 0; P.air = 1; sfx.jump(); burst(P.x + P.wallDir * H, P.y, 8, '#ffb627', 150, 0.3); }
+  else if (P.buf > 0 && P.coyote > 0) { P.vy = -JUMP * (P.pw === 2 ? 1.15 : 1); P.buf = 0; P.coyote = 0; P.ground = false; P.plat = null; P.spr = 0; sfx.jump(); }
   else if (P.buf > 0 && P.air > 0 && !P.ground && P.coyote <= 0) {
     P.vy = -JUMP * 0.92; P.air--; P.buf = 0; P.spr = 0; P.flip = 0.4; sfx.jump2();
     ring(P.x, P.y + H, 24, '#ffffff'); burst(P.x, P.y + H, 10, 'rgba(255,255,255,.85)', 170, 0.2);
@@ -1016,8 +1033,10 @@ function updatePlayer(dt) {
   if (P.x < H) { P.x = H; P.vx = 0; }
   if (L.gate && !L.gate.open && P.x + H > L.gate.x - 6) { P.x = L.gate.x - 6 - H; P.vx = Math.min(P.vx, 0); }
   let r0 = Math.floor((P.y - H) / T), r1 = Math.floor((P.y + H - 0.01) / T);
-  if (P.vx > 0 || P.plat) { const c = Math.floor((P.x + H) / T); for (let r = r0; r <= r1; r++) if (solid(L, c, r)) { P.x = c * T - H; P.vx = Math.min(P.vx, 0); break; } }
-  if (P.vx < 0 || P.plat) { const c = Math.floor((P.x - H) / T); for (let r = r0; r <= r1; r++) if (solid(L, c, r)) { P.x = (c + 1) * T + H; P.vx = Math.max(P.vx, 0); break; } }
+  let hitW = 0;
+  if (P.vx > 0 || P.plat) { const c = Math.floor((P.x + H) / T); for (let r = r0; r <= r1; r++) if (solid(L, c, r)) { P.x = c * T - H; P.vx = Math.min(P.vx, 0); hitW = 1; break; } }
+  if (P.vx < 0 || P.plat) { const c = Math.floor((P.x - H) / T); for (let r = r0; r <= r1; r++) if (solid(L, c, r)) { P.x = (c + 1) * T + H; P.vx = Math.max(P.vx, 0); hitW = -1; break; } }
+  if (P.pw === 3 && hitW && !P.ground && dir === hitW) { if (P.vy > 70) P.vy = 70; P.wallT = 0.15; P.wallDir = hitW; P.air = 1; if (Math.random() < 0.2) burst(P.x + hitW * H, P.y, 1, '#ffb627', 40, 0.2); }
 
   // Y
   const prevB = P.y + H, wasGround = P.ground, impact = P.vy;
@@ -1048,7 +1067,13 @@ function interactions() {
     const hx = c * T + 5, hy = r * T + T * 0.48;
     if (P.x + H > hx && P.x - H < hx + T - 10 && P.y + H > hy) { hurt(c * T + T / 2); return; }
   }
-  for (const k of L.coins) if (!k.got && Math.abs(k.x - P.x) < 20 && Math.abs(k.y - P.y) < 20) { k.got = true; coinsGot++; hudCoins(); mission('coins', 1); sfx.coin(); burst(k.x, k.y, 6, '#ffd36b', 140, 0.3); }
+  if (P.pw === 0) for (const k of L.coins) { if (k.got) continue; const dx = P.x - k.x, dy = P.y - k.y; if (dx * dx + dy * dy < 170 * 170) { k.x += dx * 0.09; k.y += dy * 0.09; } }
+  for (const k of L.powers) if (!k.got && Math.abs(k.x - P.x) < 22 && Math.abs(k.y - P.y) < 22) {
+    k.got = true; P.pw = k.kind; P.pwT = POWERS[k.kind].d; pwSec = -1; hudPower(); sfx.orb(); ring(k.x, k.y, 40, POWERS[k.kind].c); burst(k.x, k.y, 14, POWERS[k.kind].c, 180, 0.3);
+    popText(k.x, k.y - 24, POWERS[k.kind].n.toUpperCase() + '!', POWERS[k.kind].c, 1);
+  }
+  const cr = P.pw === 1 ? 30 : 20;
+  for (const k of L.coins) if (!k.got && Math.abs(k.x - P.x) < cr && Math.abs(k.y - P.y) < cr) { k.got = true; coinsGot++; hudCoins(); mission('coins', 1); sfx.coin(); burst(k.x, k.y, 6, '#ffd36b', 140, 0.3); }
   for (const k of L.hearts) if (!k.got && Math.abs(k.x - P.x) < 22 && Math.abs(k.y - P.y) < 22) { k.got = true; lives = Math.min(5 + up('lives'), lives + 1); hudLives(); sfx.heart(); burst(k.x, k.y, 10, '#ff5d73', 160, 0.3); }
   for (const k of L.orbs) if (!k.got && Math.abs(k.x - P.x) < 22 && Math.abs(k.y - P.y) < 22) {
     k.got = true; if (k.kind === 0) fireN += 2; else shieldN += 1; hudSkills(); sfx.orb();
@@ -1071,9 +1096,10 @@ function interactions() {
   for (const k of L.checks) if (!k.on && Math.abs(k.x - P.x) < 24 && P.y > k.y - 80) { k.on = true; cp = { x: k.x, y: k.y - H }; sfx.check(); burst(k.x, k.y - 50, 12, '#3ee6a8', 180, 0.4); }
   for (const e of L.enemies) {
     if (!e.alive) continue;
-    if (Math.abs(e.x - P.x) < e.hw + H - 2 && Math.abs(e.y - P.y) < e.hh + H - 2) {
+    const hr = H * P.rs;
+    if (Math.abs(e.x - P.x) < e.hw + hr - 2 && Math.abs(e.y - P.y) < e.hh + hr - 2) {
       const sd = e.type === 2 ? 1 : e.type === 4 ? 3 : 9;
-      if (P.shield > 0) { if (!(e.hit > 0)) { damage(e, e.type === 4 ? 1 : sd); if (e.type === 4) { P.vx = (P.x < e.x ? -1 : 1) * 300; P.vy = -380; } } }
+      if (P.shield > 0 || P.pw === 1) { if (!(e.hit > 0)) { damage(e, e.type === 4 ? 1 : sd); if (e.type === 4) { P.vx = (P.x < e.x ? -1 : 1) * 300; P.vy = -380; } } }
       else if (P.vy > 60 && P.y + H - (e.y - e.hh) < (e.type === 4 ? 22 : 14)) { damage(e, sd); P.vy = e.type === 4 ? -STOMP * 1.25 : -STOMP; P.spr = 0.15; P.air = 1; vib(25); }
       else hurt(e.x);
     }
@@ -1097,6 +1123,7 @@ function step(dt) {
   time += dt; hudTime();
   if (mode === 'endless') { const dm = (P.x - L.start.x) / T; if (dm > distM) distM = dm; }
   updatePlayer(dt);
+  if (mode === 'levels') { ghostAcc += dt; while (ghostAcc >= 1 / 15) { ghostAcc -= 1 / 15; if (ghostRec.length < 12000) ghostRec.push(Math.round(P.x), Math.round(P.y)); } }
   if (state === 'play') interactions();
   if (L.boss && L.boss.awake) hudBoss();
   const live = P.shield > 0; if (live !== shieldLive) { shieldLive = live; $('bS').classList.toggle('live', live); hudSkills(); }
@@ -1351,6 +1378,24 @@ function drawBubbles() {
     ctx.fillStyle = '#ffd36b'; ctx.beginPath(); ctx.arc(b.x - 4, b.y - 4, 5, 0, 6.283); ctx.fill();
   }
 }
+function drawPowers(x0, x1) {
+  ctx.textAlign = 'center'; ctx.font = '800 15px "Baloo 2", Nunito, sans-serif';
+  for (const k of L.powers) {
+    if (k.got || k.x < x0 - 20 || k.x > x1 + 20) continue;
+    const y = k.y + Math.sin(gameT * 3 + k.x) * 3, c = POWERS[k.kind].c;
+    ctx.globalAlpha = 0.3; ctx.fillStyle = c; ctx.beginPath(); ctx.arc(k.x, y, 17 + Math.sin(gameT * 6) * 2, 0, 6.283); ctx.fill(); ctx.globalAlpha = 1;
+    ctx.fillStyle = c; ctx.beginPath(); ctx.roundRect ? ctx.roundRect(k.x - 11, y - 11, 22, 22, 6) : ctx.rect(k.x - 11, y - 11, 22, 22); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.fillText(POWERS[k.kind].g, k.x, y + 5);
+  }
+  ctx.textAlign = 'left';
+}
+function drawGhost() {
+  if (!ghost || mode !== 'levels' || (state !== 'play' && state !== 'paused')) return;
+  const f = time * 15, i0 = Math.floor(f), n = ghost.length / 2;
+  let gx, gy; if (i0 + 1 < n) { const a = f - i0; gx = ghost[i0 * 2] + (ghost[i0 * 2 + 2] - ghost[i0 * 2]) * a; gy = ghost[i0 * 2 + 1] + (ghost[i0 * 2 + 3] - ghost[i0 * 2 + 1]) * a; } else { gx = ghost[n * 2 - 2]; gy = ghost[n * 2 - 1]; }
+  ctx.globalAlpha = 0.38; drawBall(ctx, gx, gy, 12, gx / 12, '#ffffff', '#9aa6c9', 'simplu', 1, 1); ctx.globalAlpha = 0.7;
+  ctx.font = '800 11px Nunito, sans-serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#ffffff'; ctx.fillText('RECORD', gx, gy - 18); ctx.textAlign = 'left'; ctx.globalAlpha = 1;
+}
 function drawShots() {
   for (const q of SHOTS) {
     if (!q.a) continue;
@@ -1451,8 +1496,12 @@ function render2D() {
   drawOrbs(camX, camX + viewW);
   drawWeaponsPk(camX, camX + viewW);
   drawInteractive(camX, camX + viewW);
+  drawPowers(camX, camX + viewW);
+  drawGhost();
   if (state !== 'menu' && !P.hidden && !(P.inv > 0 && Math.floor(P.inv * 10) % 2 === 0)) {
-    drawBall(ctx, P.x, P.y, 12, P.rot, ballColor, ballDark, ballPat, 2 - P.sq, P.sq);
+    const rr = 12 * P.rs;
+    if (P.pw >= 0) { ctx.globalAlpha = 0.25 + 0.1 * Math.sin(gameT * 8); ctx.fillStyle = POWERS[P.pw].c; ctx.beginPath(); ctx.arc(P.x, P.y + 12 - rr, rr + 6, 0, 6.283); ctx.fill(); ctx.globalAlpha = 1; }
+    drawBall(ctx, P.x, P.y + 12 - rr, rr, P.rot, ballColor, ballDark, ballPat, 2 - P.sq, P.sq);
   }
   if (state === 'play' && P.shield > 0 && !(P.shield < 1 && Math.floor(P.shield * 8) % 2 === 0)) {
     ctx.fillStyle = 'rgba(76,195,255,.18)'; ctx.strokeStyle = 'rgba(140,220,255,.9)'; ctx.lineWidth = 2.5;
@@ -1880,7 +1929,7 @@ function showWin() {
   for (let k = 0; k < 3; k++) { sp[k].classList.remove('on'); setTimeout(() => k < lastWin.stars && sp[k].classList.add('on'), 150 + k * 220); }
   const c2 = coinsGot >= Math.ceil(L.totalCoins * 0.8);
   $('w-why').innerHTML = `<span class="ok">★ Ai ajuns la steag</span><span class="${c2 ? 'ok' : ''}">★ Monede: ${coinsGot}/${L.totalCoins} (ai nevoie de ${Math.ceil(L.totalCoins * 0.8)})</span><span class="${!lostLife ? 'ok' : ''}">★ ${lostLife ? 'Ai pierdut cel puțin o viață' : 'Nicio viață pierdută'}</span>`;
-  $('w-stats').innerHTML = `<span class="chip">Timp <b>${fmtTime(time)}</b></span><span class="chip">Inamici doborâți <b>${kills}</b></span><span class="chip wallet"><b>+${lastEarned}</b></span>${lastWin.isRecord ? '<span class="chip"><b>Record nou</b></span>' : ''}`;
+  $('w-stats').innerHTML = `<span class="chip">Timp <b>${fmtTime(time)}</b></span><span class="chip">Inamici doborâți <b>${kills}</b></span><span class="chip wallet"><b>+${lastEarned}</b></span>${lastWin.isRecord ? '<span class="chip"><b>Record nou</b></span>' : ''}${lastWin.gd != null ? `<span class="chip">${lastWin.gd > 0 ? 'Ai bătut fantoma cu <b>' + lastWin.gd.toFixed(1) + ' s</b>' : 'Fantoma a fost mai rapidă cu <b>' + (-lastWin.gd).toFixed(1) + ' s</b>'}</span>` : ''}`;
   $('w-next').hidden = last;
   show('s-win');
 }
